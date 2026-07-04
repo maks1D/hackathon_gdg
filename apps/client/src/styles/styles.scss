@@ -76,6 +76,10 @@ a {
   transition: all var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
+  
+  /* Touch and accessibility (WCAG) */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 
   &:disabled {
     opacity: 0.5;
@@ -88,15 +92,20 @@ a {
   color: var(--btn-primary-text);
   border-color: transparent;
 
-  &:hover:not(:disabled) {
-    background: var(--btn-primary-hover);
-    box-shadow: var(--shadow-glow);
-    transform: translateY(-1px);
+  /* Tylko dla urządzeń z myszką (po najechaniu) */
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled) {
+      background: var(--btn-primary-hover);
+      box-shadow: var(--shadow-glow);
+      transform: translateY(-1px);
+    }
   }
   
+  /* Stan aktywny - po kliknięciu myszką LUB po dotknięciu palcem na mobile */
   &:active:not(:disabled) {
     background: var(--btn-primary-active);
     transform: translateY(0);
+    box-shadow: none;
   }
 }
 
@@ -105,13 +114,16 @@ a {
   color: var(--btn-secondary-text);
   border-color: var(--btn-secondary-border);
 
-  &:hover:not(:disabled) {
-    background: var(--btn-secondary-hover);
-    border-color: var(--btn-secondary-border-hover);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled) {
+      background: var(--btn-secondary-hover);
+      border-color: var(--btn-secondary-border-hover);
+    }
   }
 
   &:active:not(:disabled) {
     background: var(--btn-secondary-active);
+    border-color: var(--btn-secondary-border-hover);
   }
 }
 

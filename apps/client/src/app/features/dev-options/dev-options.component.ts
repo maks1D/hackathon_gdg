@@ -124,11 +124,11 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
             </a>
           </li>
           <li>
-            <a routerLink="/css-debugging" class="dev-tool-link">
+            <a routerLink="/design-system" class="dev-tool-link">
               <span aria-hidden="true" class="tool-icon">🎨</span> 
               <div class="tool-content">
-                <strong>CSS Debugger</strong>
-                <span class="text-secondary">Inspect design tokens and semantic variables</span>
+                <strong>Design System</strong>
+                <span class="text-secondary">Inspect design tokens and SSOT variables</span>
               </div>
             </a>
           </li>

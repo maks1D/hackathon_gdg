@@ -23,8 +23,8 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'css-debugging',
-    title: 'CSS Design Tokens & Debugger — Build with AI',
+    path: 'design-system',
+    title: 'Design System Inspector — Build with AI',
     loadComponent: () =>
       import('./features/css-debugging/css-debugging.component').then(
         (m) => m.CssDebuggingComponent,

@@ -37,20 +37,24 @@ interface RadiusToken {
   template: `
     <section aria-labelledby="debug-heading" class="animate-fade-in debug-container">
       <header class="debug-header">
-        <h1 id="debug-heading">CSS Design System Debugger</h1>
-        <p class="subtitle">A visual inspector for our Nx monorepo semantic CSS custom properties and WCAG contrast conformance.</p>
+        <h1 id="debug-heading">Design System Inspector</h1>
+        <p class="subtitle">A visual inspector for our NX monorepo design tokens, SSOT variables, and WCAG contrast conformance.</p>
       </header>
 
-      <!-- Active Theme Indicator -->
+      <!-- Active Theme & Design System Indicator -->
       <div class="card theme-indicator-card">
         <div class="indicator-header">
-          <span>Active Theme Context:</span>
+          <span>Active Context:</span>
           <strong class="badge" [class.badge-light]="isLightTheme()" [class.badge-dark]="!isLightTheme()">
             {{ isLightTheme() ? 'Light Mode ☀️' : 'Dark Mode 🌙' }}
           </strong>
+          <strong class="badge" style="background: var(--accent-primary); color: var(--btn-primary-text);">
+            {{ activeDesignSystem() }}
+          </strong>
         </div>
-        <p class="text-muted">
-          Our design system uses semantic mapping. Toggle the main theme button in the header above to watch these values shift in real time.
+        <p class="text-muted mt-sm">
+          Our design system uses a Single Source of Truth (SSOT). Switch the active design system in 
+          <a routerLink="/dev-options" style="text-decoration: underline;">Developer Options</a> or toggle Dark/Light mode in the header to watch these values shift.
         </p>
       </div>
 
@@ -101,6 +105,34 @@ interface RadiusToken {
               </div>
             </article>
           }
+        </div>
+      </section>
+
+      <!-- SSOT Buttons Section -->
+      <section aria-labelledby="buttons-heading" class="card mt-lg">
+        <h2 id="buttons-heading" class="section-title">🔘 SSOT Button Tokens (Adobe Spectrum inspired)</h2>
+        <p class="text-muted mb-md">Unified tokens ensuring proper background, hover, active (click/touch) states, and typography contrast.</p>
+
+        <div class="swatch-grid">
+          @for (color of buttonColors; track color.variable) {
+            <article class="swatch-card">
+              <div class="swatch-preview" [style.background-color]="'var(' + color.variable + ')'"></div>
+              <div class="swatch-info">
+                <strong>{{ color.name }}</strong>
+                <code>{{ color.variable }}</code>
+                <span class="desc">{{ color.description }}</span>
+              </div>
+            </article>
+          }
+        </div>
+
+        <h3 class="group-title mt-lg">Interactive Button State Tester</h3>
+        <p class="text-muted mb-md">Click, touch, and hover the buttons below to inspect transitions and active states.</p>
+        <div style="display: flex; gap: var(--spacing-md); flex-wrap: wrap;">
+          <button class="btn btn-primary">Primary Button</button>
+          <button class="btn btn-secondary">Secondary Button</button>
+          <button class="btn btn-primary" disabled>Primary Disabled</button>
+          <button class="btn btn-secondary" disabled>Secondary Disabled</button>
         </div>
       </section>
 
@@ -222,12 +254,23 @@ export class CssDebuggingComponent {
   ];
 
   accentColors: ColorToken[] = [
-    { name: 'Accent Primary (Indigo)', variable: '--accent-primary', description: 'Brand callouts and selections' },
+    { name: 'Accent Primary', variable: '--accent-primary', description: 'Brand callouts and selections' },
     { name: 'Accent Primary Hover', variable: '--accent-primary-hover', description: 'Brand actions hover state' },
-    { name: 'Accent Secondary (Cyan)', variable: '--accent-secondary', description: 'Highlights and badges' },
+    { name: 'Accent Secondary', variable: '--accent-secondary', description: 'Highlights and badges' },
     { name: 'Success State', variable: '--accent-success', description: 'Completed and verified indications' },
     { name: 'Warning State', variable: '--accent-warning', description: 'Review required status' },
     { name: 'Danger State', variable: '--accent-danger', description: 'Errors and failures notifications' }
+  ];
+
+  buttonColors: ColorToken[] = [
+    { name: 'Primary Button BG', variable: '--btn-primary-bg', description: 'Base color for primary action button' },
+    { name: 'Primary Button Hover', variable: '--btn-primary-hover', description: 'Hover color for primary action button' },
+    { name: 'Primary Button Active', variable: '--btn-primary-active', description: 'Pressed/active color for primary action button' },
+    { name: 'Primary Button Text', variable: '--btn-primary-text', description: 'Contrasting text on primary action button' },
+    { name: 'Secondary Button BG', variable: '--btn-secondary-bg', description: 'Base color for secondary action button' },
+    { name: 'Secondary Button Hover', variable: '--btn-secondary-hover', description: 'Hover color for secondary action button' },
+    { name: 'Secondary Button Active', variable: '--btn-secondary-active', description: 'Pressed/active color for secondary action button' },
+    { name: 'Secondary Button Text', variable: '--btn-secondary-text', description: 'Text color on secondary action button' }
   ];
 
   gradients: GradientToken[] = [
@@ -262,4 +305,5 @@ export class CssDebuggingComponent {
 
   private readonly themeService = inject(ThemeService);
   isLightTheme = computed(() => !this.themeService.isDark());
+  activeDesignSystem = computed(() => this.themeService.designSystem() === 'bwai' ? 'Build with AI (Google)' : 'Editorial Minimalist');
 }

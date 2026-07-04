@@ -1,10 +1,10 @@
 import { Injectable, signal } from '@angular/core';
 
+export type DesignSystem = 'editorial' | 'bwai';
+
 @Injectable({
   providedIn: 'root'
 })
-export type DesignSystem = 'editorial' | 'bwai';
-
 export class ThemeService {
   isDark = signal(true);
   designSystem = signal<DesignSystem>('editorial');
