@@ -84,8 +84,8 @@ interface SelectionResult {
           <button
             class="step-btn"
             [class.active]="currentStep() === step.id"
-            [class.completed]="currentStep() > step.id"
-            [disabled]="currentStep() < step.id"
+            [class.completed]="highestStepReached() > step.id"
+            [disabled]="highestStepReached() < step.id"
             (click)="currentStep.set(step.id)"
             [attr.aria-current]="currentStep() === step.id ? 'step' : null">
             <span class="step-number" aria-hidden="true">{{ step.id }}</span>
@@ -576,6 +576,7 @@ export class TrizSolverComponent {
 
   // ─── Pipeline state (signals) ───────────────────────────────────
   currentStep = signal(1);
+  highestStepReached = signal(1);
   isLoading = signal(false);
   announcement = signal('');
 
@@ -605,6 +606,11 @@ export class TrizSolverComponent {
     { id: 5, label: 'Evaluation' },
     { id: 6, label: 'Report' },
   ];
+
+  goToStep(stepId: number): void {
+    this.currentStep.set(stepId);
+    this.highestStepReached.update(max => Math.max(max, stepId));
+  }
 
   // ─── Step 1: Create Project ─────────────────────────────────────
 
@@ -651,7 +657,7 @@ export class TrizSolverComponent {
         next: (res) => {
           this.constraints.set(res.data.constraints);
           this.kpis.set(res.data.kpis);
-          this.currentStep.set(1.5);
+          this.goToStep(1.5);
           this.isLoading.set(false);
           this.announcement.set('Constraints and KPIs extracted. Please review.');
         },
@@ -791,7 +797,7 @@ export class TrizSolverComponent {
       .subscribe({
         next: (res) => {
           this.contradiction.set(res.data);
-          this.currentStep.set(2);
+          this.goToStep(2);
           this.isLoading.set(false);
           this.announcement.set('Contradiction identified. Review the parameters.');
         },
@@ -826,7 +832,7 @@ export class TrizSolverComponent {
         next: (res) => {
           this.frequencies.set(res.data.frequencies);
           this.triplets.set(res.data.triplets);
-          this.currentStep.set(3);
+          this.goToStep(3);
           this.isLoading.set(false);
           this.announcement.set('Principle triplets sampled. Review them.');
         },
@@ -864,7 +870,7 @@ export class TrizSolverComponent {
             ...res.data.morphologicalCandidates,
           ];
           this.candidates.set(all);
-          this.currentStep.set(4);
+          this.goToStep(4);
           this.isLoading.set(false);
           this.announcement.set(`${all.length} candidates generated (TRIZ + Morphological).`);
         },
@@ -891,7 +897,7 @@ export class TrizSolverComponent {
       .subscribe({
         next: (res) => {
           this.scoreboard.set(res.data.scoreboard);
-          this.currentStep.set(5);
+          this.goToStep(5);
           this.isLoading.set(false);
           this.announcement.set('Evaluation complete. Review the scoreboard.');
         },
@@ -918,7 +924,7 @@ export class TrizSolverComponent {
       .subscribe({
         next: (res) => {
           this.selection.set(res.data);
-          this.currentStep.set(6);
+          this.goToStep(6);
           this.isLoading.set(false);
           this.announcement.set('Report generated. The winner has been selected.');
         },
