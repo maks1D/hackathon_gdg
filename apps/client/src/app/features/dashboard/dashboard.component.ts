@@ -48,7 +48,7 @@ interface MetricCard {
         <div class="actions-grid" appScrollReveal appScrollRevealChildren=".action-card" [appScrollRevealDelay]="150">
           <a routerLink="/triz-solver" class="card action-card" id="action-playground" appTilt>
             <span class="action-icon floating-ui" aria-hidden="true">🧠</span>
-            <h3>TRIZ R&D Solver</h3>
+            <h3>R&D Solver</h3>
             <p>AI-powered inventive problem solving pipeline</p>
           </a>
           <a routerLink="/settings" class="card action-card" id="action-settings" appTilt>

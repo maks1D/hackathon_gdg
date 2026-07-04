@@ -26,7 +26,7 @@ import { TrizApiService } from '@libs/http';
   template: `
     <section aria-labelledby="triz-heading" class="animate-fade-in">
       <div class="text-reveal-mask">
-        <h1 id="triz-heading">TRIZ R&D Innovation Solver</h1>
+        <h1 id="triz-heading">R&D Innovation Solver</h1>
       </div>
       <p>AI-powered inventive problem solving with TRIZ contradiction analysis, weighted principle sampling, and multi-criteria evaluation.</p>
 
@@ -94,10 +94,10 @@ import { TrizApiService } from '@libs/http';
         </section>
       }
 
-      <!-- Step 1.5: Constraints & KPIs Review -->
-      @if (currentStep() === 1.5) {
+      <!-- Step 2: Plan (Constraints & KPIs Review) -->
+      @if (currentStep() === 2) {
         <section class="card step-panel" aria-label="Constraints and KPIs">
-          <h2>Step 1.5: Constraints & KPIs</h2>
+          <h2>Step 2: Plan (Constraints & KPIs)</h2>
           <p class="text-muted">Review the extracted constraints (blacklist) and KPIs. Modify them manually or ask AI to adjust them.</p>
           
           <div class="triplets-grid" style="grid-template-columns: 1fr 1fr;">
@@ -157,10 +157,10 @@ import { TrizApiService } from '@libs/http';
         </section>
       }
 
-      <!-- Step 2: Contradiction Review -->
-      @if (currentStep() === 2) {
-        <section class="card step-panel" aria-label="Contradiction review">
-          <h2>Step 2: Technical Contradiction (IF-THEN-BUT)</h2>
+      <!-- Step 3: Triz Contradiction & Principles Review -->
+      @if (currentStep() === 3) {
+        <section class="card step-panel" aria-label="Contradiction and principles review">
+          <h2>Step 3: Technical Contradiction (IF-THEN-BUT)</h2>
           @if (contradiction()) {
             <div class="contradiction-grid">
               <div class="if-card">
@@ -186,62 +186,64 @@ import { TrizApiService } from '@libs/http';
                 </ul>
               </div>
             </div>
-            <div class="btn-row">
-              <button class="btn btn-primary" (click)="confirmContradiction()" [disabled]="isLoading()" id="confirm-contradiction-btn">
-                @if (isLoading()) {
-                  <span class="spinner" role="status" aria-hidden="true"></span> Sampling...
-                } @else {
-                  Approve & Sample Principles
-                }
-              </button>
-              <button class="btn btn-secondary" (click)="regenerateContradiction()" [disabled]="isLoading()">Regenerate</button>
-            </div>
-          }
-        </section>
-      }
 
-      <!-- Step 3: Sampled Triplets Review -->
-      @if (currentStep() === 3) {
-        <section class="card step-panel" aria-label="Principles review">
-          <h2>Step 3: Sampled Inventive Principle Triplets</h2>
-          @if (frequencies().length > 0) {
-            <div class="freq-bar-section">
-              <h3>Frequency Distribution (from 9 matrix lookups)</h3>
-              <div class="freq-bars">
-                @for (f of frequencies(); track f.principleId) {
-                  <div class="freq-row">
-                    <span class="freq-label">{{ f.principleId }}: {{ f.name }}</span>
-                    <div class="freq-bar" [style.width.%]="(f.frequency / maxFrequency()) * 100"></div>
-                    <span class="freq-count">×{{ f.frequency }}</span>
+            <!-- Display Sampled Principles if they have been generated -->
+            @if (frequencies().length > 0) {
+              <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+                <h3>Sampled Inventive Principle Triplets</h3>
+                <div class="freq-bar-section">
+                  <h4>Frequency Distribution (from 9 matrix lookups)</h4>
+                  <div class="freq-bars">
+                    @for (f of frequencies(); track f.principleId) {
+                      <div class="freq-row">
+                        <span class="freq-label">{{ f.principleId }}: {{ f.name }}</span>
+                        <div class="freq-bar" [style.width.%]="(f.frequency / maxFrequency()) * 100"></div>
+                        <span class="freq-count">×{{ f.frequency }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+                
+                @if (triplets().length > 0) {
+                  <div class="triplets-grid" style="margin-top: 1.5rem;">
+                    @for (triplet of triplets(); track triplet.index) {
+                      <div class="triplet-card">
+                        <h4>Triplet {{ triplet.index + 1 }}</h4>
+                        <ul class="principle-list">
+                          @for (name of triplet.principleNames; track name; let i = $index) {
+                            <li class="principle-tag">{{ triplet.principleIds[i] }}: {{ name }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
                   </div>
                 }
               </div>
-            </div>
-          }
-          @if (triplets().length > 0) {
-            <div class="triplets-grid">
-              @for (triplet of triplets(); track triplet.index) {
-                <div class="triplet-card">
-                  <h4>Triplet {{ triplet.index + 1 }}</h4>
-                  <ul class="principle-list">
-                    @for (name of triplet.principleNames; track name; let i = $index) {
-                      <li class="principle-tag">{{ triplet.principleIds[i] }}: {{ name }}</li>
-                    }
-                  </ul>
-                </div>
+            }
+
+            <div class="btn-row" style="margin-top: 1.5rem;">
+              @if (frequencies().length === 0) {
+                <button class="btn btn-primary" (click)="confirmContradiction()" [disabled]="isLoading()" id="confirm-contradiction-btn">
+                  @if (isLoading()) {
+                    <span class="spinner" role="status" aria-hidden="true"></span> Sampling...
+                  } @else {
+                    Approve & Sample Principles
+                  }
+                </button>
+                <button class="btn btn-secondary" (click)="regenerateContradiction()" [disabled]="isLoading()">Regenerate</button>
+              } @else {
+                <button class="btn btn-primary" (click)="generateCandidates()" [disabled]="isLoading()" id="generate-candidates-btn">
+                  @if (isLoading()) {
+                    <span class="spinner" role="status" aria-hidden="true"></span> Generating...
+                  } @else {
+                    Generate Solutions
+                  }
+                </button>
+                <button class="btn btn-secondary" (click)="resampleTriplets()" [disabled]="isLoading()">Re-sample Principles</button>
+                <button class="btn btn-secondary" (click)="regenerateContradiction()" [disabled]="isLoading()">Regenerate Contradiction</button>
               }
             </div>
-            <div class="btn-row">
-              <button class="btn btn-primary" (click)="generateCandidates()" [disabled]="isLoading()" id="generate-candidates-btn">
-                @if (isLoading()) {
-                  <span class="spinner" role="status" aria-hidden="true"></span> Generating...
-                } @else {
-                  Generate Solutions
-                }
-              </button>
-              <button class="btn btn-secondary" (click)="resampleTriplets()" [disabled]="isLoading()">Re-sample</button>
-            </div>
-          }
+          @}
         </section>
       }
 
@@ -551,10 +553,9 @@ export class TrizSolverComponent {
 
   steps = [
     { id: 1, label: 'Problem' },
-    { id: 1.5, label: 'Constraints' },
-    { id: 2, label: 'Contradiction' },
-    { id: 3, label: 'Principles' },
-    { id: 4, label: 'Candidates' },
+    { id: 2, label: 'Plan' },
+    { id: 3, label: 'Triz Contradiction' },
+    { id: 4, label: 'Triz Candidates' },
     { id: 5, label: 'Evaluation' },
     { id: 6, label: 'Report' },
   ];
@@ -602,7 +603,7 @@ export class TrizSolverComponent {
         next: (res) => {
           this.constraints.set(res.data.constraints);
           this.kpis.set(res.data.kpis);
-          this.goToStep(1.5);
+          this.goToStep(2);
           this.isLoading.set(false);
           this.announcement.set('Constraints and KPIs extracted. Please review.');
         },
@@ -733,7 +734,7 @@ export class TrizSolverComponent {
       .subscribe({
         next: (res) => {
           this.contradiction.set(res.data);
-          this.goToStep(2);
+          this.goToStep(3);
           this.isLoading.set(false);
           this.announcement.set('Contradiction identified. Review the parameters.');
         },
@@ -748,6 +749,8 @@ export class TrizSolverComponent {
     const proj = this.project();
     if (!proj) return;
     this.isLoading.set(true);
+    this.frequencies.set([]);
+    this.triplets.set([]);
     this.generateContradictionCall(proj.id);
   }
 

@@ -32,7 +32,7 @@ export const routes: Routes = [
   },
   {
     path: 'triz-solver',
-    title: 'TRIZ R&D Solver — Build with AI',
+    title: 'R&D Solver — Build with AI',
     loadComponent: () =>
       import('./features/triz-solver/triz-solver.component').then(
         (m) => m.TrizSolverComponent,
