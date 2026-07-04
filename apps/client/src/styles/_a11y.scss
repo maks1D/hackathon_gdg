@@ -1,0 +1,113 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Accessibility Utilities — WCAG 2.1 / 2.2 Compliance
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Skip Navigation Link (WCAG 2.4.1) ───────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--spacing-md);
+  z-index: 9999;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--accent-primary);
+  color: #ffffff;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+  border-radius: var(--border-radius-md);
+  transition: top var(--transition-fast);
+
+  &:focus {
+    top: var(--spacing-md);
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
+/* ─── Focus Ring (WCAG 2.4.7) ──────────────────────────────────────── */
+*:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--border-radius-sm);
+}
+
+/* Remove default outline for mouse users, keep for keyboard */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Screen Reader Only (Visually Hidden) ─────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Reduced Motion (WCAG 2.3.3) ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Focus trap indicator ─────────────────────────────────────────── */
+[aria-modal="true"] {
+  /* Ensures modal content is visually distinguished */
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── ARIA live region styling ─────────────────────────────────────── */
+[aria-live] {
+  /* Live regions are typically invisible but announced */
+}
+
+[aria-live="assertive"] {
+  /* Urgent announcements */
+}
+
+/* ─── High contrast mode focus ─────────────────────────────────────── */
+@media (forced-colors: active) {
+  *:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .skip-link:focus {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* ─── Touch target sizing (WCAG 2.5.8) — minimum 24x24px ──────────── */
+button,
+[role="button"],
+a,
+input[type="checkbox"],
+input[type="radio"],
+select,
+summary {
+  min-height: 2.75rem; /* 44px — Apple HIG / WCAG AAA */
+  min-width: 2.75rem;
+}
+
+/* ─── Keyboard navigation indicator for interactive elements ──────── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}

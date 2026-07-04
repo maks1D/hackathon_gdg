@@ -1,0 +1,61 @@
+# ═══════════════════════════════════════════════════════════════════
+# Docker Compose — Local Development
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  # ─── NestJS API ──────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - API_PORT=3000
+      - CORS_ORIGIN=http://localhost:4200
+      - LLM_DEFAULT_PROVIDER=openai
+      - ENABLE_LLM_TELEMETRY=true
+      - CACHE_TTL_SECONDS=3600
+    env_file:
+      - .env
+    volumes:
+      - api-data:/app/prisma
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ─── Angular Client ─────────────────────────────────────────────
+  client:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.client
+    ports:
+      - "4200:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Redis (Cache) ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  api-data:
+  redis-data:

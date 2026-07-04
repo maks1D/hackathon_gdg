@@ -1,0 +1,480 @@
+{
+  "graph": {
+    "nodes": {
+      "client": {
+        "name": "client",
+        "type": "app",
+        "data": {
+          "root": "apps/client",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {
+                "lintFilePatterns": [
+                  "apps/client/**/*.ts",
+                  "apps/client/**/*.html"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "build": {
+              "executor": "@angular/build:application",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/apps/client",
+                "index": "apps/client/src/index.html",
+                "browser": "apps/client/src/main.ts",
+                "polyfills": [
+                  "zone.js"
+                ],
+                "tsConfig": "apps/client/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "styles": [
+                  "apps/client/src/styles/styles.scss"
+                ],
+                "scripts": []
+              },
+              "configurations": {
+                "production": {
+                  "budgets": [
+                    {
+                      "type": "initial",
+                      "maximumWarning": "500kB",
+                      "maximumError": "1MB"
+                    },
+                    {
+                      "type": "anyComponentStyle",
+                      "maximumWarning": "4kB",
+                      "maximumError": "8kB"
+                    }
+                  ],
+                  "outputHashing": "all"
+                },
+                "development": {
+                  "optimization": false,
+                  "extractLicenses": false,
+                  "sourceMap": true
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "cache": true
+            },
+            "serve": {
+              "executor": "@angular/build:dev-server",
+              "configurations": {
+                "production": {
+                  "buildTarget": "client:build:production"
+                },
+                "development": {
+                  "buildTarget": "client:build:development"
+                }
+              },
+              "defaultConfiguration": "development",
+              "options": {
+                "proxyConfig": "apps/client/proxy.conf.json",
+                "port": 4200
+              },
+              "parallelism": true
+            }
+          },
+          "name": "client",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/client/src",
+          "projectType": "application",
+          "prefix": "app",
+          "tags": [
+            "scope:client",
+            "type:app"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "shared": {
+        "name": "shared",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {
+                "lintFilePatterns": [
+                  "libs/shared/**/*.ts"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            }
+          },
+          "name": "shared",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/src",
+          "projectType": "library",
+          "tags": [
+            "scope:shared",
+            "type:lib"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "http": {
+        "name": "http",
+        "type": "lib",
+        "data": {
+          "root": "libs/http",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {
+                "lintFilePatterns": [
+                  "libs/http/**/*.ts"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            }
+          },
+          "name": "http",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/http/src",
+          "projectType": "library",
+          "tags": [
+            "scope:shared",
+            "type:lib"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "api": {
+        "name": "api",
+        "type": "app",
+        "data": {
+          "root": "apps/api",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {
+                "lintFilePatterns": [
+                  "apps/api/**/*.ts"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "build": {
+              "executor": "@nx/webpack:webpack",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "target": "node",
+                "compiler": "tsc",
+                "outputPath": "dist/apps/api",
+                "main": "apps/api/src/main.ts",
+                "tsConfig": "apps/api/tsconfig.app.json",
+                "webpackConfig": "apps/api/webpack.config.js"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "cache": true
+            },
+            "serve": {
+              "executor": "@nx/js:node",
+              "options": {
+                "buildTarget": "api:build",
+                "watch": true
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "api",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/api/src",
+          "projectType": "application",
+          "tags": [
+            "scope:api",
+            "type:app"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "@hackathon/source": {
+        "name": "@hackathon/source",
+        "type": "lib",
+        "data": {
+          "root": ".",
+          "name": "@hackathon/source",
+          "tags": [
+            "npm:private"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "start",
+                "start:api",
+                "start:client",
+                "build",
+                "build:api",
+                "build:client",
+                "lint",
+                "test",
+                "prisma:generate",
+                "prisma:migrate",
+                "prisma:studio",
+                "docker:up",
+                "docker:down",
+                "graph"
+              ]
+            },
+            "description": "GDG Build with AI — Hackathon Monorepo (Angular + NestJS + Nx)",
+            "js": {
+              "packageName": "@hackathon/source",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "start": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start"
+              },
+              "metadata": {
+                "scriptContent": "npx nx run-many --target=serve --projects=api,client --parallel",
+                "runCommand": "npm run start"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "start:api": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start:api"
+              },
+              "metadata": {
+                "scriptContent": "npx nx serve api",
+                "runCommand": "npm run start:api"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "start:client": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start:client"
+              },
+              "metadata": {
+                "scriptContent": "npx nx serve client",
+                "runCommand": "npm run start:client"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build"
+              },
+              "metadata": {
+                "scriptContent": "npx nx run-many --target=build --all",
+                "runCommand": "npm run build"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "cache": true
+            },
+            "build:api": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build:api"
+              },
+              "metadata": {
+                "scriptContent": "npx nx build api",
+                "runCommand": "npm run build:api"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build:client": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build:client"
+              },
+              "metadata": {
+                "scriptContent": "npx nx build client",
+                "runCommand": "npm run build:client"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "lint"
+              },
+              "metadata": {
+                "scriptContent": "npx nx run-many --target=lint --all",
+                "runCommand": "npm run lint"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "test": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test"
+              },
+              "metadata": {
+                "scriptContent": "npx nx run-many --target=test --all",
+                "runCommand": "npm run test"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "^production"
+              ],
+              "cache": true
+            },
+            "prisma:generate": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "prisma:generate"
+              },
+              "metadata": {
+                "scriptContent": "npx prisma generate",
+                "runCommand": "npm run prisma:generate"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "prisma:migrate": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "prisma:migrate"
+              },
+              "metadata": {
+                "scriptContent": "npx prisma migrate dev",
+                "runCommand": "npm run prisma:migrate"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "prisma:studio": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "prisma:studio"
+              },
+              "metadata": {
+                "scriptContent": "npx prisma studio",
+                "runCommand": "npm run prisma:studio"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "docker:up": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "docker:up"
+              },
+              "metadata": {
+                "scriptContent": "docker-compose up -d",
+                "runCommand": "npm run docker:up"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "docker:down": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "docker:down"
+              },
+              "metadata": {
+                "scriptContent": "docker-compose down",
+                "runCommand": "npm run docker:down"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "graph": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "graph"
+              },
+              "metadata": {
+                "scriptContent": "npx nx graph",
+                "runCommand": "npm run graph"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "implicitDependencies": []
+        }
+      }
+    },
+    "dependencies": {
+      "client": [],
+      "shared": [],
+      "http": [],
+      "api": [
+        {
+          "source": "api",
+          "target": "shared",
+          "type": "static"
+        }
+      ],
+      "@hackathon/source": []
+    }
+  }
+}

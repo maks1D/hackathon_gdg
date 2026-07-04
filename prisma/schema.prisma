@@ -1,0 +1,103 @@
+// ─── Prisma Schema ──────────────────────────────────────────────────
+// Database: SQLite (swap to PostgreSQL by changing provider + DATABASE_URL)
+// Supports all 5 business models from GDG workshop
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Person (User) Entity ───────────────────────────────────────────
+model Person {
+  id               String         @id @default(uuid())
+  email            String         @unique
+  name             String
+  role             String         @default("USER")    // USER | ADMIN | REVIEWER
+  subscriptionTier String         @default("FREE")    // FREE | BASIC | PRO | ENTERPRISE
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  subscriptions    Subscription[]
+  usageRecords     UsageRecord[]
+  llmCallLogs      LlmCallLog[]
+  humanReviews     HumanReviewItem[]
+}
+
+// ─── Subscription Entity ────────────────────────────────────────────
+// Supports: SAAS, FREEMIUM, PAY_PER_USE, LICENSE_B2B, WHITE_LABEL
+model Subscription {
+  id        String   @id @default(uuid())
+  personId  String
+  type      String   // SAAS | FREEMIUM | PAY_PER_USE | LICENSE_B2B | WHITE_LABEL
+  status    String   @default("ACTIVE") // ACTIVE | TRIAL | SUSPENDED | CANCELLED
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  metadata  String?  // JSON string for flexible business model data
+
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+}
+
+// ─── Usage Record (Pay-per-Use tracking) ────────────────────────────
+model UsageRecord {
+  id        String   @id @default(uuid())
+  personId  String
+  action    String   // e.g., "llm_call", "document_processed", "report_generated"
+  units     Float    @default(1)
+  cost      Float    @default(0)
+  timestamp DateTime @default(now())
+
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@index([timestamp])
+}
+
+// ─── LLM Call Log (Telemetry) ───────────────────────────────────────
+model LlmCallLog {
+  id            String   @id @default(uuid())
+  personId      String?
+  provider      String   // openai | anthropic | gemini
+  model         String
+  inputTokens   Int
+  outputTokens  Int
+  totalTokens   Int
+  costUsd       Float
+  latencyMs     Int
+  promptHash    String   // For cache deduplication
+  cached        Boolean  @default(false)
+  success       Boolean  @default(true)
+  errorMessage  String?
+  timestamp     DateTime @default(now())
+
+  person        Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  @@index([personId])
+  @@index([promptHash])
+  @@index([timestamp])
+}
+
+// ─── Human Review Queue (Guardrails) ────────────────────────────────
+model HumanReviewItem {
+  id              String   @id @default(uuid())
+  personId        String?
+  llmOutput       String   // The raw LLM output
+  prompt          String   // Original prompt
+  reason          String   // Why flagged: "low_confidence" | "schema_mismatch" | "guardrail_trigger"
+  confidence      Float    // 0-1 confidence score
+  status          String   @default("PENDING") // PENDING | APPROVED | REJECTED | CORRECTED
+  reviewerNote    String?
+  correctedOutput String?
+  createdAt       DateTime @default(now())
+  reviewedAt      DateTime?
+
+  person          Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([createdAt])
+}
