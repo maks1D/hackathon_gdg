@@ -23,7 +23,7 @@ export interface ApiResponse<T> {
  */
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly baseUrl = '/api';
+  private readonly baseUrl = 'https://hackathon-api-v5un4f6xta-lm.a.run.app/api';
   private readonly http = inject(HttpClient);
 
   get<T>(path: string, params?: Record<string, string>): Observable<ApiResponse<T>> {

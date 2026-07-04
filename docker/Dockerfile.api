@@ -6,6 +6,9 @@
 # ─── Build Stage ─────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy dependency files
@@ -32,6 +35,9 @@ RUN npx prisma db push
 # ─── Production Stage ───────────────────────────────────────────────
 FROM node:22-alpine AS production
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Create non-root user
@@ -55,7 +61,7 @@ RUN chown -R appuser:appgroup ./prisma
 USER appuser
 
 # Defaults for Cloud Run
-ENV DATABASE_URL="file:./prisma/dev.db"
+ENV DATABASE_URL="file:./dev.db"
 ENV LLM_DEFAULT_PROVIDER="openai"
 ENV ENABLE_LLM_TELEMETRY="true"
 ENV CACHE_TTL_SECONDS="3600"
