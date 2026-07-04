@@ -5,7 +5,7 @@
   "description": "GDG Build with AI — Hackathon Monorepo (Angular + NestJS + Nx)",
   "license": "MIT",
   "scripts": {
-    "start": "npx nx run-many --target=serve --projects=api,client --parallel=2",
+    "start": "npx nx run-many --target=serve --projects=api,client --parallel=2 --output-style=stream",
     "start:api": "npx nx serve api",
     "start:client": "npx nx serve client",
     "build": "npx nx run-many --target=build --projects=client,api",
@@ -81,7 +81,9 @@
     "webpack-cli": "^5.1.4"
   },
   "nx": {
-    "implicitDependencies": ["*"]
+    "implicitDependencies": [
+      "*"
+    ]
   },
   "overrides": {
     "picomatch": "^4.0.3",
