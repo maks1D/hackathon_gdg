@@ -25,6 +25,10 @@ COPY libs ./libs
 # Build NestJS
 RUN npx nx build api
 
+# Bake SQLite DB into the image
+ENV DATABASE_URL="file:./dev.db"
+RUN npx prisma db push
+
 # ─── Production Stage ───────────────────────────────────────────────
 FROM node:22-alpine AS production
 
@@ -44,12 +48,14 @@ RUN npm ci --prefer-offline --omit=dev && \
 
 # Copy built application
 COPY --from=builder /app/dist/apps/api ./dist
+COPY --from=builder /app/prisma/dev.db ./prisma/dev.db
+RUN chown -R appuser:appgroup ./prisma
 
 # Switch to non-root
 USER appuser
 
 # Defaults for Cloud Run
-ENV DATABASE_URL="file:./dev.db"
+ENV DATABASE_URL="file:./prisma/dev.db"
 ENV LLM_DEFAULT_PROVIDER="openai"
 ENV ENABLE_LLM_TELEMETRY="true"
 ENV CACHE_TTL_SECONDS="3600"
@@ -60,4 +66,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma db push && node dist/main.js"]
+CMD ["node", "dist/main.js"]
