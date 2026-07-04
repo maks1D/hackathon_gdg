@@ -5,7 +5,7 @@
   "description": "GDG Build with AI — Hackathon Monorepo (Angular + NestJS + Nx)",
   "license": "MIT",
   "scripts": {
-    "start": "concurrently \"npx nx serve api\" \"npx nx serve client\"",
+    "start": "npx nx run-many --target=serve --projects=api,client --parallel=2",
     "start:api": "npx nx serve api",
     "start:client": "npx nx serve client",
     "build": "npx nx run-many --target=build --projects=client,api",

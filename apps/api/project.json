@@ -8,6 +8,15 @@
     "type:app"
   ],
   "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/api"],
+      "options": {
+        "cwd": "apps/api",
+        "command": "npx webpack-cli build"
+      },
+      "cache": true
+    },
     "serve": {
       "executor": "@nx/js:node",
       "options": {
