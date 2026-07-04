@@ -39,6 +39,7 @@ interface TrizCandidate {
   title: string;
   description: string;
   appliedRules: string;
+  source?: 'TRIZ' | 'MORPHOLOGICAL';
 }
 
 interface ScoreboardEntry {
@@ -595,25 +596,32 @@ export class TrizSolverComponent {
     this.confirmContradiction();
   }
 
-  // ─── Step 4: Generate Candidates ────────────────────────────────
+  // ─── Step 4: Generate Candidates (TRIZ + Morphological) ─────────
 
   generateCandidates(): void {
     const proj = this.project();
     if (!proj) return;
     this.isLoading.set(true);
-    this.announcement.set('Generating candidate solutions from principle triplets...');
+    this.announcement.set('Generating candidate solutions using TRIZ principles and Morphological Analysis...');
 
     this.http
-      .post<{ data: TrizCandidate[] }>(
+      .post<{ data: {
+        trizCandidates: TrizCandidate[];
+        morphologicalCandidates: TrizCandidate[];
+      } }>(
         `/api/triz/project/${proj.id}/candidates/generate`,
         {},
       )
       .subscribe({
         next: (res) => {
-          this.candidates.set(res.data);
+          const all = [
+            ...res.data.trizCandidates,
+            ...res.data.morphologicalCandidates,
+          ];
+          this.candidates.set(all);
           this.currentStep.set(4);
           this.isLoading.set(false);
-          this.announcement.set(`${res.data.length} candidates generated.`);
+          this.announcement.set(`${all.length} candidates generated (TRIZ + Morphological).`);
         },
         error: () => {
           this.isLoading.set(false);

@@ -221,7 +221,7 @@ Respond in valid JSON matching this exact schema:
     };
   }
 
-  // ─── Step 4: Generate Candidates via LLM ────────────────────────
+  // ─── Step 4a: Generate TRIZ Candidates via LLM ──────────────────
 
   async generateCandidates(projectId: string) {
     const project = await this.getProjectOrThrow(projectId);
@@ -236,9 +236,9 @@ Respond in valid JSON matching this exact schema:
       );
     }
 
-    // Clear previous candidates
+    // Clear previous TRIZ candidates only
     await this.prisma.trizCandidate.deleteMany({
-      where: { projectId },
+      where: { projectId, source: 'TRIZ' },
     });
 
     const candidates = [];
@@ -296,19 +296,240 @@ Respond in valid JSON:
           title: parsed.title,
           description: parsed.description,
           appliedRules: typeof parsed.appliedRules === 'string' ? parsed.appliedRules : JSON.stringify(parsed.appliedRules, null, 2),
+          source: 'TRIZ',
         },
       });
 
       candidates.push(candidate);
     }
 
-    await this.prisma.trizProject.update({
-      where: { id: projectId },
-      data: { status: 'CANDIDATES_GENERATED' },
+    this.logger.log(`Generated ${candidates.length} TRIZ candidates for project ${projectId}`);
+    return candidates;
+  }
+
+  // ─── Step 4b: Generate Morphological Candidates via LLM ─────────
+
+  async generateMorphologicalCandidates(projectId: string) {
+    const project = await this.getProjectOrThrow(projectId);
+
+    // Clear previous morphological candidates only
+    await this.prisma.trizCandidate.deleteMany({
+      where: { projectId, source: 'MORPHOLOGICAL' },
     });
 
-    this.logger.log(`Generated ${candidates.length} candidates for project ${projectId}`);
-    return candidates;
+    // ── LLM Call 1: Decompose problem into 5 dimensions ──────────
+    this.logger.log(`[Morph] Step 1/4: Decomposing problem into dimensions...`);
+
+    const decomposeResponse = await this.llm.complete({
+      prompt: `Analyze the following engineering/innovation problem and decompose it into EXACTLY 5 key solution dimensions (categories). For each dimension, provide 4-6 concrete variant options.
+
+PROBLEM:
+${project.description}
+
+TARGET SDGs: ${project.targetSdgs}
+
+The 5 dimensions should cover the most critical design axes of the problem space, such as:
+- Technology/method used
+- Architecture/topology
+- Resource management approach
+- Deployment/delivery model
+- Ownership/business model
+
+Adapt the dimension names to fit the specific problem domain.
+
+Respond in valid JSON:
+{
+  "dimensions": [
+    { "id": "dimension_1_snake_case", "label": "Human Readable Label", "variants": ["variant_a", "variant_b", "variant_c", "variant_d"] },
+    { "id": "dimension_2_snake_case", "label": "Human Readable Label", "variants": ["variant_a", "variant_b", "variant_c", "variant_d", "variant_e"] }
+  ]
+}`,
+      systemPrompt: 'You are a systems engineering expert specializing in morphological analysis and creative problem decomposition. Respond with valid JSON only.',
+      provider: 'openrouter' as any,
+      model: 'openai/gpt-4o-mini',
+      temperature: 0.6,
+      maxTokens: 2048,
+    });
+
+    const decomposed = this.parseJsonResponse<{
+      dimensions: Array<{ id: string; label: string; variants: string[] }>;
+    }>(decomposeResponse.content);
+
+    this.logger.log(`[Morph] Decomposed into ${decomposed.dimensions.length} dimensions with ${decomposed.dimensions.map(d => d.variants.length).join(',')} variants`);
+
+    // ── LLM Call 2: Expand with synonyms ──────────────────────────
+    this.logger.log(`[Morph] Step 2/4: Expanding variants with synonyms...`);
+
+    const expandResponse = await this.llm.complete({
+      prompt: `Given the following morphological box (problem decomposition), expand each dimension with 2-3 additional synonym/alternative variants. These should be genuinely different approaches, not just rewordings.
+
+CURRENT MORPH BOX:
+${JSON.stringify(decomposed.dimensions, null, 2)}
+
+PROBLEM CONTEXT:
+${project.description}
+
+Rules:
+- Add new variants that represent genuinely different technical/strategic approaches.
+- Keep the original variants, just add new ones.
+- Use snake_case for variant names.
+
+Respond in valid JSON with the SAME structure:
+{
+  "dimensions": [
+    { "id": "...", "label": "...", "variants": ["original_1", "original_2", ..., "new_synonym_1", "new_synonym_2"] }
+  ]
+}`,
+      systemPrompt: 'You are a creative engineering expert. Expand the design space with meaningful alternatives. Respond with valid JSON only.',
+      provider: 'openrouter' as any,
+      model: 'openai/gpt-4o-mini',
+      temperature: 0.7,
+      maxTokens: 2048,
+    });
+
+    const expanded = this.parseJsonResponse<{
+      dimensions: Array<{ id: string; label: string; variants: string[] }>;
+    }>(expandResponse.content);
+
+    this.logger.log(`[Morph] Expanded to ${expanded.dimensions.map(d => d.variants.length).join(',')} variants per dimension`);
+
+    // ── LLM Call 3: Deduplicate overlapping variants ──────────────
+    this.logger.log(`[Morph] Step 3/4: Deduplicating overlapping variants...`);
+
+    const dedupeResponse = await this.llm.complete({
+      prompt: `Review the following expanded morphological box and remove redundant/overlapping variants. Two variants overlap if they describe essentially the same approach.
+
+EXPANDED MORPH BOX:
+${JSON.stringify(expanded.dimensions, null, 2)}
+
+Rules:
+- Within each dimension, remove variants that are too similar to each other.
+- Keep at least 4 variants per dimension.
+- Keep the most descriptive variant name when removing duplicates.
+- Do NOT remove variants across different dimensions (cross-dimension overlap is fine).
+
+Respond in valid JSON with the SAME structure:
+{
+  "dimensions": [
+    { "id": "...", "label": "...", "variants": ["kept_variant_1", "kept_variant_2", ...] }
+  ]
+}`,
+      systemPrompt: 'You are a systems engineering expert performing morphological analysis. Be rigorous in identifying true overlaps. Respond with valid JSON only.',
+      provider: 'openrouter' as any,
+      model: 'openai/gpt-4o-mini',
+      temperature: 0.3,
+      maxTokens: 2048,
+    });
+
+    const deduplicated = this.parseJsonResponse<{
+      dimensions: Array<{ id: string; label: string; variants: string[] }>;
+    }>(dedupeResponse.content);
+
+    this.logger.log(`[Morph] Deduplicated to ${deduplicated.dimensions.map(d => d.variants.length).join(',')} variants per dimension`);
+
+    // ── Step 4: Random sampling of 3 combinations ────────────────
+    this.logger.log(`[Morph] Step 4/4: Sampling 3 random combinations...`);
+
+    const combinations: Array<Record<string, string>> = [];
+    const usedKeys = new Set<string>();
+
+    for (let i = 0; i < 3; i++) {
+      let combo: Record<string, string>;
+      let key: string;
+      let attempts = 0;
+
+      do {
+        combo = {};
+        for (const dim of deduplicated.dimensions) {
+          const randomIndex = Math.floor(Math.random() * dim.variants.length);
+          combo[dim.id] = dim.variants[randomIndex];
+        }
+        key = Object.values(combo).sort().join('|');
+        attempts++;
+      } while (usedKeys.has(key) && attempts < 50);
+
+      usedKeys.add(key);
+      combinations.push(combo);
+    }
+
+    // Persist the morph box and combinations
+    await this.prisma.trizMorphBox.upsert({
+      where: { projectId },
+      create: {
+        projectId,
+        dimensions: JSON.stringify(deduplicated.dimensions),
+        combinations: JSON.stringify(combinations),
+      },
+      update: {
+        dimensions: JSON.stringify(deduplicated.dimensions),
+        combinations: JSON.stringify(combinations),
+      },
+    });
+
+    // ── Generate 3 candidate solutions from combinations ─────────
+    const candidates = [];
+
+    for (let i = 0; i < combinations.length; i++) {
+      const combo = combinations[i];
+      const comboDescription = deduplicated.dimensions
+        .map((dim) => `- ${dim.label}: ${combo[dim.id]?.replace(/_/g, ' ')}`)
+        .join('\n');
+
+      const response = await this.llm.complete({
+        prompt: `Generate ONE innovative candidate solution for the following problem, based on a specific combination of design choices from a morphological analysis.
+
+PROBLEM:
+${project.description}
+
+TARGET SDGs: ${project.targetSdgs}
+
+DESIGN COMBINATION (one variant chosen per dimension):
+${comboDescription}
+
+CONSTRAINTS:
+- The solution MUST integrate ALL of the above design choices into a coherent concept.
+- The solution must be concrete, actionable, and technically feasible.
+- Explain how each dimension choice shapes the final solution.
+
+Respond in valid JSON:
+{
+  "title": "Short descriptive name of the solution",
+  "description": "Detailed implementation concept (2-4 paragraphs)",
+  "appliedRules": "Explanation of how each morphological dimension was integrated"
+}`,
+        systemPrompt:
+          'You are an innovative R&D engineer expert in morphological analysis and creative solution synthesis. Respond accurately with valid JSON only.',
+        provider: 'openrouter' as any,
+        model: 'openai/gpt-4o-mini',
+        temperature: 0.7,
+        maxTokens: 2048,
+      });
+
+      const parsed = this.parseJsonResponse<{
+        title: string;
+        description: string;
+        appliedRules: string;
+      }>(response.content);
+
+      const candidate = await this.prisma.trizCandidate.create({
+        data: {
+          projectId,
+          title: parsed.title,
+          description: parsed.description,
+          appliedRules: typeof parsed.appliedRules === 'string' ? parsed.appliedRules : JSON.stringify(parsed.appliedRules, null, 2),
+          source: 'MORPHOLOGICAL',
+        },
+      });
+
+      candidates.push(candidate);
+    }
+
+    this.logger.log(`Generated ${candidates.length} morphological candidates for project ${projectId}`);
+    return {
+      morphBox: deduplicated.dimensions,
+      combinations,
+      candidates,
+    };
   }
 
   // ─── Step 5: Evaluate Candidates via LLM ────────────────────────
@@ -560,6 +781,7 @@ Respond in valid JSON:
         triplets: { orderBy: { index: 'asc' } },
         candidates: { include: { scores: true } },
         selection: true,
+        morphBox: true,
       },
     });
 
@@ -577,6 +799,13 @@ Respond in valid JSON:
   }
 
   // ─── Helpers ────────────────────────────────────────────────────
+
+  async updateProjectStatus(projectId: string, status: string) {
+    await this.prisma.trizProject.update({
+      where: { id: projectId },
+      data: { status },
+    });
+  }
 
   private async getProjectOrThrow(projectId: string) {
     const project = await this.prisma.trizProject.findUnique({

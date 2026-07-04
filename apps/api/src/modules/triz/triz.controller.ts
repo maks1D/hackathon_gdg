@@ -70,16 +70,49 @@ export class TrizController {
     return this.trizService.confirmAndSample(id, dto);
   }
 
-  // ─── Step 4: Generate Candidates ────────────────────────────────
+  // ─── Step 4: Generate Candidates (TRIZ + Morphological) ─────────
 
   @Post('project/:id/candidates/generate')
   @ApiOperation({
-    summary: 'Generate candidate solutions from sampled triplets via LLM',
+    summary: 'Generate all 6 candidates: 3 TRIZ + 3 Morphological (in parallel)',
+    description:
+      'Runs both TRIZ principle-based and Morphological Analysis candidate generation in parallel, producing 6 total candidates.',
+  })
+  async generateAllCandidates(@Param('id') id: string) {
+    const [trizCandidates, morphResult] = await Promise.all([
+      this.trizService.generateCandidates(id),
+      this.trizService.generateMorphologicalCandidates(id),
+    ]);
+
+    // Update status after both are done
+    await this.trizService.updateProjectStatus(id, 'CANDIDATES_GENERATED');
+
+    return {
+      trizCandidates,
+      morphologicalCandidates: morphResult.candidates,
+      morphBox: morphResult.morphBox,
+      combinations: morphResult.combinations,
+    };
+  }
+
+  @Post('project/:id/candidates/triz')
+  @ApiOperation({
+    summary: 'Generate 3 TRIZ candidates from sampled triplets via LLM',
     description:
       'Creates one candidate solution per sampled triplet (3 total), each grounded in 3 specific inventive principles.',
   })
-  generateCandidates(@Param('id') id: string) {
+  generateTrizCandidates(@Param('id') id: string) {
     return this.trizService.generateCandidates(id);
+  }
+
+  @Post('project/:id/candidates/morphological')
+  @ApiOperation({
+    summary: 'Generate 3 candidates via Morphological Analysis',
+    description:
+      'Decomposes problem into 5 dimensions, expands with synonyms, deduplicates, samples 3 random combinations, and generates candidate solutions.',
+  })
+  generateMorphologicalCandidates(@Param('id') id: string) {
+    return this.trizService.generateMorphologicalCandidates(id);
   }
 
   // ─── Step 5: Evaluate Candidates ────────────────────────────────

@@ -118,6 +118,7 @@ model TrizProject {
   candidates       TrizCandidate[]
   evaluations      TrizEvaluationScore[]
   selection        TrizSelection?
+  morphBox         TrizMorphBox?
 }
 
 model TrizContradiction {
@@ -148,6 +149,7 @@ model TrizCandidate {
   title            String
   description      String
   appliedRules     String
+  source           String                @default("TRIZ") // TRIZ | MORPHOLOGICAL
   createdAt        DateTime              @default(now())
 
   project          TrizProject           @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -176,6 +178,16 @@ model TrizSelection {
   projectId        String      @unique
   candidateId      String
   reasoning        String
+  createdAt        DateTime    @default(now())
+
+  project          TrizProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model TrizMorphBox {
+  id               String      @id @default(uuid())
+  projectId        String      @unique
+  dimensions       String      // JSON: [{id, label, variants}]
+  combinations     String?     // JSON: [[variant, ...], ...] — the 3 sampled combos
   createdAt        DateTime    @default(now())
 
   project          TrizProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
