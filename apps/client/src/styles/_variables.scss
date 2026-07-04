@@ -33,6 +33,19 @@
   --gradient-card: linear-gradient(145deg, #1e1e4a 0%, #16163a 100%);
   --gradient-glow: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
 
+  /* ─── SSOT Button Tokens (Editorial Dark) ────────────────────────── */
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-hover: var(--accent-primary-hover);
+  --btn-primary-active: color-mix(in srgb, var(--accent-primary) 80%, black);
+  --btn-primary-text: #ffffff;
+  
+  --btn-secondary-bg: transparent;
+  --btn-secondary-hover: var(--bg-card);
+  --btn-secondary-active: var(--bg-card-hover);
+  --btn-secondary-text: var(--text-primary);
+  --btn-secondary-border: var(--border-color);
+  --btn-secondary-border-hover: var(--accent-primary);
+
   /* ─── Spacing ────────────────────────────────────────────────────── */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -142,4 +155,100 @@
   --shadow-glow: 0 0 20px rgba(29, 52, 41, 0.2);
   
   --focus-ring-color: #b2cdbd;
+
+  /* SSOT Button Tokens (Editorial Light) */
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-hover: var(--accent-primary-hover);
+  --btn-primary-active: color-mix(in srgb, var(--accent-primary) 80%, black);
+  --btn-primary-text: #ffffff;
+  
+  --btn-secondary-bg: transparent;
+  --btn-secondary-hover: var(--bg-card-hover);
+  --btn-secondary-active: color-mix(in srgb, var(--bg-card-hover) 90%, black);
+  --btn-secondary-text: var(--text-primary);
+  --btn-secondary-border: var(--border-color);
+  --btn-secondary-border-hover: var(--accent-primary);
+}
+
+/* ─── "Build with AI Wroclaw" (BWAI) Design System ─────────────────── */
+.theme-bwai {
+  /* BWAI Dark Palette (Google Colors on Dark) */
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-card: #282828;
+  --bg-card-hover: #333333;
+  --bg-input: #1f1f1f;
+  
+  --text-primary: #f1f3f4;
+  --text-secondary: #bdc1c6;
+  --text-muted: #9aa0a6;
+
+  /* Google Brand Colors */
+  --accent-primary: #8ab4f8;      /* Blue */
+  --accent-primary-hover: #aecbfa;
+  --accent-secondary: #f28b82;    /* Red */
+  --accent-success: #81c995;      /* Green */
+  --accent-warning: #fde293;      /* Yellow */
+  --accent-danger: #f28b82;
+
+  --gradient-primary: linear-gradient(135deg, #8ab4f8 0%, #aecbfa 100%);
+  --gradient-card: linear-gradient(145deg, #282828 0%, #1f1f1f 100%);
+  --gradient-glow: radial-gradient(circle at 50% 0%, rgba(138, 180, 248, 0.15) 0%, transparent 60%);
+
+  --border-color: #3c4043;
+  --focus-ring-color: #8ab4f8;
+
+  /* BWAI SSOT Buttons (Dark) */
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-hover: var(--accent-primary-hover);
+  --btn-primary-active: color-mix(in srgb, var(--accent-primary) 80%, black);
+  --btn-primary-text: #121212; /* High contrast on light blue */
+  
+  --btn-secondary-bg: transparent;
+  --btn-secondary-hover: rgba(138, 180, 248, 0.08); /* Blue tint hover */
+  --btn-secondary-active: rgba(138, 180, 248, 0.12);
+  --btn-secondary-text: var(--accent-primary);
+  --btn-secondary-border: var(--border-color);
+  --btn-secondary-border-hover: var(--accent-primary);
+}
+
+.theme-bwai.theme-light {
+  /* BWAI Light Palette */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f3f4;
+  --bg-input: #f1f3f4;
+  
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --text-muted: #80868b;
+
+  /* Google Brand Colors (Light mode) */
+  --accent-primary: #1a73e8;      /* Blue */
+  --accent-primary-hover: #1558d6;
+  --accent-secondary: #d93025;    /* Red */
+  --accent-success: #1e8e3e;      /* Green */
+  --accent-warning: #f9ab00;      /* Yellow */
+  --accent-danger: #d93025;
+
+  --gradient-primary: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  --gradient-glow: radial-gradient(circle at 50% 0%, rgba(26, 115, 232, 0.15) 0%, transparent 60%);
+
+  --border-color: #dadce0;
+  --focus-ring-color: #4285f4;
+
+  /* BWAI SSOT Buttons (Light) */
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-hover: var(--accent-primary-hover);
+  --btn-primary-active: color-mix(in srgb, var(--accent-primary) 80%, black);
+  --btn-primary-text: #ffffff;
+  
+  --btn-secondary-bg: transparent;
+  --btn-secondary-hover: rgba(26, 115, 232, 0.04);
+  --btn-secondary-active: rgba(26, 115, 232, 0.08);
+  --btn-secondary-text: var(--accent-primary);
+  --btn-secondary-border: var(--border-color);
+  --btn-secondary-border-hover: var(--accent-primary);
 }

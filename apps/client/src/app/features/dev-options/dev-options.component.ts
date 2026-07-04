@@ -1,8 +1,9 @@
-import { Component, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MagneticDirective } from '../../shared/directives/magnetic.directive';
 import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
+import { ThemeService, DesignSystem } from '../../shared/services/theme.service';
 
 @Component({
   selector: 'app-dev-options',
@@ -54,6 +55,47 @@ import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.dir
           class="success-text mt-sm"
           id="save-notification">
           {{ saveMessage() }}
+        </div>
+      </section>
+
+      <!-- Design System Configuration -->
+      <section aria-labelledby="design-system-config" class="card mt-lg" appScrollReveal [appScrollRevealDelay]="150">
+        <h2 id="design-system-config">Design System</h2>
+        <p class="text-muted mb-md">Select the core design system for the application. Changes apply globally.</p>
+
+        <div class="form-group">
+          <label class="form-label">Active Design System</label>
+          <div class="radio-group">
+            <label class="radio-label" [class.active]="themeService.designSystem() === 'editorial'">
+              <input 
+                type="radio" 
+                name="designSystem" 
+                value="editorial" 
+                [ngModel]="themeService.designSystem()"
+                (ngModelChange)="onDesignSystemChange($event)"
+                class="sr-only">
+              <span class="radio-custom"></span>
+              <div class="radio-content">
+                <strong>Editorial Minimalist</strong>
+                <span class="text-muted text-sm">Deep greens, off-whites, elegant typography</span>
+              </div>
+            </label>
+
+            <label class="radio-label" [class.active]="themeService.designSystem() === 'bwai'">
+              <input 
+                type="radio" 
+                name="designSystem" 
+                value="bwai" 
+                [ngModel]="themeService.designSystem()"
+                (ngModelChange)="onDesignSystemChange($event)"
+                class="sr-only">
+              <span class="radio-custom"></span>
+              <div class="radio-content">
+                <strong>Build with AI (Google)</strong>
+                <span class="text-muted text-sm">Vibrant primary colors, clear contrasts, material-inspired</span>
+              </div>
+            </label>
+          </div>
         </div>
       </section>
 
@@ -142,6 +184,70 @@ import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.dir
       min-height: 20px;
     }
     
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+    }
+    .radio-label {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .radio-label:hover {
+      border-color: var(--text-muted);
+    }
+    .radio-label.active {
+      border-color: var(--accent-primary);
+      background: color-mix(in srgb, var(--accent-primary) 5%, transparent);
+    }
+    .radio-custom {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .radio-label.active .radio-custom {
+      border-color: var(--accent-primary);
+    }
+    .radio-label.active .radio-custom::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+    }
+    .radio-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .text-sm {
+      font-size: var(--font-size-sm);
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    
     .dev-tools-list {
       list-style: none;
       padding: 0;
@@ -187,6 +293,8 @@ import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.dir
   `],
 })
 export class DevOptionsComponent implements OnInit {
+  themeService = inject(ThemeService);
+
   customApiKey = signal('');
   saveMessage = signal('');
 
@@ -206,5 +314,9 @@ export class DevOptionsComponent implements OnInit {
     }
     this.saveMessage.set('API Key saved successfully.');
     setTimeout(() => this.saveMessage.set(''), 3000);
+  }
+
+  onDesignSystemChange(system: DesignSystem): void {
+    this.themeService.setDesignSystem(system);
   }
 }

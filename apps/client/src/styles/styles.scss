@@ -84,24 +84,34 @@ a {
 }
 
 .btn-primary {
-  background: var(--gradient-primary);
-  color: #ffffff;
-  border-color: var(--accent-primary);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: transparent;
 
   &:hover:not(:disabled) {
+    background: var(--btn-primary-hover);
     box-shadow: var(--shadow-glow);
     transform: translateY(-1px);
+  }
+  
+  &:active:not(:disabled) {
+    background: var(--btn-primary-active);
+    transform: translateY(0);
   }
 }
 
 .btn-secondary {
-  background: transparent;
-  color: var(--text-primary);
-  border-color: var(--border-color);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border-color: var(--btn-secondary-border);
 
   &:hover:not(:disabled) {
-    background: var(--bg-card);
-    border-color: var(--accent-primary);
+    background: var(--btn-secondary-hover);
+    border-color: var(--btn-secondary-border-hover);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--btn-secondary-active);
   }
 }
 
