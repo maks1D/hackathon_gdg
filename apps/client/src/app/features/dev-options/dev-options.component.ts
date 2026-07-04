@@ -73,6 +73,15 @@ import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.dir
             </a>
           </li>
           <li>
+            <a href="http://localhost:3000/api/triz/parameters" target="_blank" rel="noopener noreferrer" class="dev-tool-link">
+              <span aria-hidden="true" class="tool-icon">🧠</span> 
+              <div class="tool-content">
+                <strong>TRIZ Parameters API</strong>
+                <span class="text-muted">View the 39 standard TRIZ engineering parameters</span>
+              </div>
+            </a>
+          </li>
+          <li>
             <a routerLink="/css-debugging" class="dev-tool-link">
               <span aria-hidden="true" class="tool-icon">🎨</span> 
               <div class="tool-content">

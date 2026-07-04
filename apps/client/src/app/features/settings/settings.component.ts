@@ -26,9 +26,10 @@ import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.dir
             [(ngModel)]="defaultProvider"
             name="defaultProvider"
             aria-describedby="provider-hint">
-            <option value="openai">OpenAI (GPT-4o)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-            <option value="gemini">Google (Gemini)</option>
+            <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash</option>
+            <option value="google/gemini-2.5-pro">Google Gemini 2.5 Pro</option>
+            <option value="anthropic/claude-3-haiku">Anthropic Claude 3 Haiku</option>
+            <option value="openai/gpt-4o">OpenAI GPT-4o</option>
           </select>
           <small id="provider-hint" class="text-muted">
             Choose the default LLM provider for API calls.

@@ -101,3 +101,82 @@ model HumanReviewItem {
   @@index([status])
   @@index([createdAt])
 }
+
+// ─── TRIZ Solver: R&D Innovation Pipeline ───────────────────────────
+
+model TrizProject {
+  id               String               @id @default(uuid())
+  title            String
+  description      String
+  targetSdgs       String               // JSON string array e.g. "[7, 9, 11]"
+  status           String               @default("CREATED") // CREATED | CONTRADICTION_REFORMULATED | PRINCIPLES_SAMPLED | CANDIDATES_GENERATED | EVALUATED | COMPLETED
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  contradiction    TrizContradiction?
+  triplets         TrizSampledTriplet[]
+  candidates       TrizCandidate[]
+  evaluations      TrizEvaluationScore[]
+  selection        TrizSelection?
+}
+
+model TrizContradiction {
+  id               String      @id @default(uuid())
+  projectId        String      @unique
+  improvingIds     String      // Comma-separated e.g. "14,15,27"
+  worseningIds     String      // Comma-separated e.g. "1,25,32"
+  ifThenButText    String      // Structured IF/THEN/BUT text
+
+  project          TrizProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model TrizSampledTriplet {
+  id               String      @id @default(uuid())
+  projectId        String
+  principles       String      // Comma-separated e.g. "1,15,40"
+  index            Int         // 0, 1, or 2
+
+  project          TrizProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model TrizCandidate {
+  id               String                @id @default(uuid())
+  projectId        String
+  tripletId        String?
+  title            String
+  description      String
+  appliedRules     String
+  createdAt        DateTime              @default(now())
+
+  project          TrizProject           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scores           TrizEvaluationScore[]
+
+  @@index([projectId])
+}
+
+model TrizEvaluationScore {
+  id               String        @id @default(uuid())
+  projectId        String
+  candidateId      String
+  criteriaName     String        // "SDG Alignment" | "Feasibility" | "Cost" | "Complexity"
+  score            Float
+  rationale        String
+
+  project          TrizProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  candidate        TrizCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, criteriaName])
+  @@index([projectId])
+}
+
+model TrizSelection {
+  id               String      @id @default(uuid())
+  projectId        String      @unique
+  candidateId      String
+  reasoning        String
+  createdAt        DateTime    @default(now())
+
+  project          TrizProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}

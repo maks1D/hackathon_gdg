@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { LlmModule } from './modules/llm/llm.module';
 import { HealthModule } from './modules/health/health.module';
+import { TrizModule } from './modules/triz/triz.module';
 
 import { HttpExceptionFilter } from './core/filters/http-exception.filter';
 import { LoggingInterceptor } from './core/interceptors/logging.interceptor';
@@ -29,6 +30,7 @@ import { TransformInterceptor } from './core/interceptors/transform.interceptor'
     BillingModule,
     LlmModule,
     HealthModule,
+    TrizModule,
   ],
   providers: [
     // ─── Global exception filter ────────────────────────────────────

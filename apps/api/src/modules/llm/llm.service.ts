@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { LlmProviderFactory } from './providers/llm-provider.factory';
+import { OpenRouterProvider } from './providers/openrouter.provider';
 import { PromptBuilderService } from './prompt-templates/prompt-builder.service';
 import { GuardrailService } from './guardrails/guardrail.service';
 import { LlmTelemetryService } from './telemetry/llm-telemetry.service';
@@ -14,7 +14,7 @@ import type { LlmCompletionResponse, LlmProviderType } from '@libs/shared';
  * This is NOT a simple API wrapper. It orchestrates:
  * 1. Prompt construction (template + context injection)
  * 2. Cache lookup (deduplication of identical requests)
- * 3. Provider-agnostic LLM call (OpenAI / Anthropic / Gemini)
+ * 3. Provider-agnostic LLM call (OpenRouter)
  * 4. Structured output validation (Zod schemas)
  * 5. Guardrail evaluation (confidence, hallucination checks)
  * 6. Telemetry logging (tokens, cost, latency)
@@ -25,7 +25,7 @@ export class LlmService {
   private readonly logger = new Logger(LlmService.name);
 
   constructor(
-    private readonly providerFactory: LlmProviderFactory,
+    private readonly provider: OpenRouterProvider,
     private readonly promptBuilder: PromptBuilderService,
     private readonly guardrails: GuardrailService,
     private readonly telemetry: LlmTelemetryService,
@@ -48,15 +48,18 @@ export class LlmService {
     });
 
     // ─── 2. Cache lookup ────────────────────────────────────────────
-    const cacheKey = this.cache.generateKey(builtPrompt, dto.provider, dto.model);
+    const providerType = 'openrouter' as LlmProviderType;
+    const model = dto.model || this.provider.defaultModel;
+
+    const cacheKey = this.cache.generateKey(builtPrompt, providerType, model);
     const cachedResult = await this.cache.get(cacheKey);
 
     if (cachedResult) {
       this.logger.debug('Cache HIT — returning cached LLM response');
       await this.telemetry.logCall({
         personId,
-        provider: (dto.provider || 'openai') as LlmProviderType,
-        model: dto.model || 'unknown',
+        provider: providerType,
+        model: model,
         inputTokens: 0,
         outputTokens: 0,
         totalTokens: 0,
@@ -70,17 +73,11 @@ export class LlmService {
     }
 
     // ─── 3. Get provider & call LLM ─────────────────────────────────
-    const providerType = (dto.provider ||
-      process.env['LLM_DEFAULT_PROVIDER'] ||
-      'openai') as LlmProviderType;
-    const provider = this.providerFactory.getProvider(providerType);
-    const model = dto.model || provider.defaultModel;
-
     let rawResponse: string;
     let usage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
 
     try {
-      const result = await provider.complete({
+      const result = await this.provider.complete({
         messages: builtPrompt,
         model,
         temperature: dto.temperature ?? 0.7,

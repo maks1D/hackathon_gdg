@@ -40,9 +40,7 @@ export interface LlmUsageMetrics {
 }
 
 export enum LlmProviderType {
-  OPENAI = 'openai',
-  ANTHROPIC = 'anthropic',
-  GEMINI = 'gemini',
+  OPENROUTER = 'openrouter',
 }
 
 export interface LlmBusinessMetrics {

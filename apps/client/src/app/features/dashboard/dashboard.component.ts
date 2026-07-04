@@ -1,7 +1,6 @@
 import { Component, OnInit, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { MagneticDirective } from '../../shared/directives/magnetic.directive';
 import { TiltDirective } from '../../shared/directives/tilt.directive';
 import { CountUpDirective } from '../../shared/directives/count-up.directive';
 import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
@@ -17,7 +16,7 @@ interface MetricCard {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MagneticDirective, TiltDirective, CountUpDirective, ScrollRevealDirective],
+  imports: [RouterLink, TiltDirective, CountUpDirective, ScrollRevealDirective],
   template: `
     <section aria-labelledby="dashboard-heading" class="animate-fade-in">
       <div class="text-reveal-mask">
@@ -47,10 +46,10 @@ interface MetricCard {
       <section aria-label="Quick actions" class="mt-lg">
         <h2>Quick Actions</h2>
         <div class="actions-grid" appScrollReveal appScrollRevealChildren=".action-card" [appScrollRevealDelay]="150">
-          <a routerLink="/ai-playground" class="card action-card" id="action-playground" appTilt>
-            <span class="action-icon floating-ui" aria-hidden="true">🤖</span>
-            <h3>AI Playground</h3>
-            <p>Test LLM prompts and structured outputs</p>
+          <a routerLink="/triz-solver" class="card action-card" id="action-playground" appTilt>
+            <span class="action-icon floating-ui" aria-hidden="true">🧠</span>
+            <h3>TRIZ R&D Solver</h3>
+            <p>AI-powered inventive problem solving pipeline</p>
           </a>
           <a routerLink="/settings" class="card action-card" id="action-settings" appTilt>
             <span class="action-icon floating-ui-delay-1" aria-hidden="true">⚙️</span>
@@ -58,6 +57,7 @@ interface MetricCard {
             <p>Configure providers and business model</p>
           </a>
         </div>
+
       </section>
 
       <!-- Status -->

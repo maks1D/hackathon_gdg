@@ -15,14 +15,6 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'ai-playground',
-    title: 'AI Playground — Build with AI',
-    loadComponent: () =>
-      import('./features/ai-playground/ai-playground.component').then(
-        (m) => m.AiPlaygroundComponent,
-      ),
-  },
-  {
     path: 'settings',
     title: 'Settings — Build with AI',
     loadComponent: () =>
@@ -36,6 +28,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/css-debugging/css-debugging.component').then(
         (m) => m.CssDebuggingComponent,
+      ),
+  },
+  {
+    path: 'triz-solver',
+    title: 'TRIZ R&D Solver — Build with AI',
+    loadComponent: () =>
+      import('./features/triz-solver/triz-solver.component').then(
+        (m) => m.TrizSolverComponent,
       ),
   },
   {
