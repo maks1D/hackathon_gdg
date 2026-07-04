@@ -36,7 +36,9 @@ export interface SampledTriplet {
 
 export interface TrizCandidate {
   id: string;
+  projectId: string;
   title: string;
+  tldr?: string;
   description: string;
   appliedRules: string;
   source?: 'TRIZ' | 'MORPHOLOGICAL';

@@ -422,7 +422,8 @@ CONSTRAINTS:
 Respond in valid JSON:
 {
   "title": "Short descriptive name of the solution",
-  "description": "Detailed implementation concept (2-4 paragraphs)",
+  "tldr": "A 1-2 sentence intelligent summary capturing the absolute essence of the solution.",
+  "description": "Detailed implementation concept. MUST use HTML tags (<p>, <ul>, <li>, <strong>) for formatting with bullet points and bold text to ensure high readability.",
   "appliedRules": "Explanation of how each of the 3 principles was applied"
 }`,
         systemPrompt:
@@ -435,6 +436,7 @@ Respond in valid JSON:
 
       const parsed = this.parseJsonResponse<{
         title: string;
+        tldr: string;
         description: string;
         appliedRules: string;
       }>(response.content);
@@ -444,6 +446,7 @@ Respond in valid JSON:
           projectId,
           tripletId: triplet.id,
           title: parsed.title,
+          tldr: parsed.tldr,
           description: parsed.description,
           appliedRules: typeof parsed.appliedRules === 'string' ? parsed.appliedRules : JSON.stringify(parsed.appliedRules, null, 2),
           source: 'TRIZ',
@@ -702,7 +705,8 @@ CONSTRAINTS:
 Respond in valid JSON:
 {
   "title": "Short descriptive name of the solution",
-  "description": "Detailed implementation concept (2-4 paragraphs)",
+  "tldr": "A 1-2 sentence intelligent summary capturing the absolute essence of the solution.",
+  "description": "Detailed implementation concept. MUST use HTML tags (<p>, <ul>, <li>, <strong>) for formatting with bullet points and bold text to ensure high readability.",
   "appliedRules": "Explanation of how each morphological dimension was integrated"
 }`,
         systemPrompt:
@@ -715,6 +719,7 @@ Respond in valid JSON:
 
       const parsed = this.parseJsonResponse<{
         title: string;
+        tldr: string;
         description: string;
         appliedRules: string;
       }>(response.content);
@@ -723,6 +728,7 @@ Respond in valid JSON:
         data: {
           projectId,
           title: parsed.title,
+          tldr: parsed.tldr,
           description: parsed.description,
           appliedRules: typeof parsed.appliedRules === 'string' ? parsed.appliedRules : JSON.stringify(parsed.appliedRules, null, 2),
           source: 'MORPHOLOGICAL',

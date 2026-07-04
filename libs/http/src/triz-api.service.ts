@@ -59,7 +59,7 @@ export class TrizApiService {
     return this.apiService.post<{ scoreboard: ScoreboardEntry[] }>(`/triz/project/${projectId}/evaluate`, {});
   }
 
-  selectWinner(projectId: string): Observable<ApiResponse<SelectionResult>> {
-    return this.apiService.post<SelectionResult>(`/triz/project/${projectId}/select`, {});
+  selectWinner(projectId: string, candidateId?: string | null): Observable<ApiResponse<SelectionResult>> {
+    return this.apiService.post<SelectionResult>(`/triz/project/${projectId}/select`, { candidateId });
   }
 }

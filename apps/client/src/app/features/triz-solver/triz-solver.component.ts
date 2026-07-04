@@ -326,10 +326,30 @@ import { TrizApiService } from '@libs/http';
                     {{ c.source }}
                   </span>
                 </div>
-                <p class="candidate-desc">{{ c.description }}</p>
-                <div class="applied-rules">
-                  <strong>Logic/Rules:</strong> {{ c.appliedRules }}
-                </div>
+                
+                @if (c.tldr) {
+                  <p class="candidate-desc" style="font-size: 1.05rem; color: var(--text-color);">{{ c.tldr }}</p>
+                } @else {
+                  <p class="candidate-desc" style="font-size: 1.05rem; color: var(--text-color);">{{ c.description.substring(0, 120) }}...</p>
+                }
+                
+                @if (expandedCandidates()[c.id]) {
+                  <div class="expanded-content" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); animation: fadeIn 0.3s ease-out;">
+                    <div class="expanded-desc-box">
+                      <div class="candidate-desc-expanded" [innerHTML]="c.description"></div>
+                    </div>
+                  </div>
+                }
+                
+                <button class="btn btn-secondary" (click)="toggleCandidate(c.id)" style="margin-top: 1rem; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem; background: transparent; border: 1px dashed var(--border-color);">
+                  @if (expandedCandidates()[c.id]) {
+                    <span>Collapse Details</span>
+                    <span aria-hidden="true">↑</span>
+                  } @else {
+                    <span>Expand Details</span>
+                    <span aria-hidden="true">↓</span>
+                  }
+                </button>
               </article>
             }
           </div>
@@ -366,9 +386,19 @@ import { TrizApiService } from '@libs/http';
               </thead>
               <tbody>
                 @for (entry of scoreboard(); track entry.candidateId; let i = $index) {
-                  <tr [class.winner-row]="i === 0 && !entry.isDisqualified">
+                  <tr 
+                    [class.winner-row]="selectedWinnerId() === entry.candidateId"
+                    [class.selectable-row]="!entry.isDisqualified"
+                    (click)="!entry.isDisqualified && selectedWinnerId.set(entry.candidateId)"
+                    [style.cursor]="entry.isDisqualified ? 'not-allowed' : 'pointer'"
+                  >
                     <td>
-                      {{ entry.title }}
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        @if (selectedWinnerId() === entry.candidateId) {
+                          <span style="color: var(--accent-success, #10b981); font-weight: bold; font-size: 1.1rem;">✓</span>
+                        }
+                        <span>{{ entry.title }}</span>
+                      </div>
                       @if (entry.isDisqualified) {
                         <br><span style="color: var(--accent-danger, #ef4444); font-size: 0.8em; font-weight: bold;">DISQUALIFIED</span>
                         <br><span style="color: var(--accent-danger, #ef4444); font-size: 0.75em;">{{ entry.disqualReason }}</span>
@@ -418,9 +448,9 @@ import { TrizApiService } from '@libs/http';
           @if (selection()) {
             <div class="winner-banner">
               <h3>🏆 Winner: {{ selection()!.winner.title }}</h3>
-              <p>{{ selection()!.winner.description }}</p>
+              <div [innerHTML]="selection()!.winner.description" class="candidate-desc-expanded" style="margin-top: var(--spacing-sm);"></div>
             </div>
-            <details class="reasoning-details" open>
+            <details class="reasoning-details">
               <summary>Full Reasoning Trail</summary>
               <pre class="reasoning-pre">{{ selection()!.reasoning }}</pre>
             </details>
@@ -530,6 +560,32 @@ import { TrizApiService } from '@libs/http';
       background: var(--bg-input);
     }
     .candidate-desc { margin: var(--spacing-sm) 0; line-height: var(--line-height-relaxed); }
+    .expanded-desc-box {
+      background: rgba(255, 255, 255, 0.03);
+      padding: var(--spacing-md);
+      border-radius: var(--border-radius-md);
+      border-left: 3px solid var(--accent-primary);
+    }
+    .candidate-desc-expanded {
+      margin: 0;
+      line-height: 1.8;
+      font-size: 1rem;
+      color: var(--text-color);
+      font-weight: 300;
+      letter-spacing: 0.2px;
+      text-align: justify;
+    }
+    /* Style innerHTML tags using ::ng-deep due to Angular View Encapsulation */
+    ::ng-deep .candidate-desc-expanded p { margin-top: 0; margin-bottom: var(--spacing-sm); }
+    ::ng-deep .candidate-desc-expanded p:last-child { margin-bottom: 0; }
+    ::ng-deep .candidate-desc-expanded ul { 
+      margin-top: 0; 
+      margin-bottom: var(--spacing-sm); 
+      padding-left: 1.5rem; /* Tweak this value to move bullets/text left or right */
+    }
+    ::ng-deep .candidate-desc-expanded ul:last-child { margin-bottom: 0; }
+    ::ng-deep .candidate-desc-expanded li { margin-bottom: var(--spacing-xs); }
+    ::ng-deep .candidate-desc-expanded strong { color: var(--accent-primary); font-weight: 500; }
     .applied-rules { font-size: var(--font-size-sm); color: var(--text-muted); margin-top: var(--spacing-sm); }
 
     .eval-table {
@@ -544,7 +600,8 @@ import { TrizApiService } from '@libs/http';
       font-size: var(--font-size-sm);
     }
     .eval-table th { color: var(--text-muted); font-weight: var(--font-weight-medium); }
-    .winner-row { background: rgba(16, 185, 129, 0.08); }
+    .winner-row { background: rgba(16, 185, 129, 0.12) !important; }
+    .selectable-row:hover { background: rgba(255, 255, 255, 0.03); }
     .score-cell { font-weight: var(--font-weight-bold); color: var(--accent-primary); }
 
     .winner-banner {
@@ -673,6 +730,8 @@ export class TrizSolverComponent {
   morphBox = signal<any[]>([]);
   morphCombinations = signal<any[]>([]);
   selectedComboIndex = signal<number>(0);
+  expandedCandidates = signal<Record<string, boolean>>({});
+  selectedWinnerId = signal<string | null>(null);
 
   maxFrequency = computed(() => {
     const freqs = this.frequencies();
@@ -857,6 +916,13 @@ export class TrizSolverComponent {
 
   // ─── Step 2: Generate / Regenerate Contradiction ────────────────
 
+  toggleCandidate(id: string): void {
+    this.expandedCandidates.update((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  }
+
   private generateContradictionCall(projectId: string): void {
     this.trizApi
       .generateContradiction(projectId)
@@ -983,6 +1049,11 @@ export class TrizSolverComponent {
       .subscribe({
         next: (res) => {
           this.scoreboard.set(res.data.scoreboard);
+          // Set default winner to the highest scoring non-disqualified candidate
+          const firstNonDisqualified = res.data.scoreboard.find((entry: any) => !entry.isDisqualified);
+          if (firstNonDisqualified) {
+            this.selectedWinnerId.set(firstNonDisqualified.candidateId);
+          }
           this.goToStep(6);
           this.isLoading.set(false);
           this.announcement.set('Evaluation complete. Review the scoreboard.');
@@ -1003,7 +1074,7 @@ export class TrizSolverComponent {
     this.announcement.set('Selecting winner and generating report...');
 
     this.trizApi
-      .selectWinner(proj.id)
+      .selectWinner(proj.id, this.selectedWinnerId())
       .subscribe({
         next: (res) => {
           this.selection.set(res.data);

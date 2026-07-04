@@ -149,6 +149,7 @@ model TrizCandidate {
   projectId        String
   tripletId        String?
   title            String
+  tldr             String?
   description      String
   appliedRules     String
   source           String                @default("TRIZ") // TRIZ | MORPHOLOGICAL
