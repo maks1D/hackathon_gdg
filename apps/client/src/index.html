@@ -9,10 +9,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      .sr-only {
+        color: rgb(255, 255, 255) !important;
+        background-color: rgb(49, 46, 129) !important;
+      }
+    </style>
   </head>
   <body>
     <!-- Skip Navigation Link (A11Y - WCAG 2.4.1) -->
-    <a href="#main-content" class="skip-link" id="skip-nav">
+    <a href="#main-content" class="skip-link" id="skip-nav" style="color: rgb(255, 255, 255); background-color: rgb(49, 46, 129);">
       Skip to main content
     </a>
     <app-root></app-root>

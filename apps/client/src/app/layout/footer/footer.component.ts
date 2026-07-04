@@ -37,7 +37,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 
     .footer-meta {
       font-size: var(--font-size-xs);
-      color: var(--text-muted);
+      color: var(--text-secondary);
       margin-bottom: 0;
     }
   `],

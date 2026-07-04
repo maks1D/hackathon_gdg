@@ -19,7 +19,7 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
       <!-- API Configuration -->
       <section aria-labelledby="api-config" class="card mt-lg" appScrollReveal [appScrollRevealDelay]="100">
         <h2 id="api-config">API Configuration</h2>
-        <p class="text-muted mb-md">Override default endpoints or provide a custom API key for external services.</p>
+        <p class="text-secondary mb-md">Override default endpoints or provide a custom API key for external services.</p>
 
         <div class="form-group">
           <label for="custom-api-key" class="form-label">Custom API Key</label>
@@ -44,7 +44,7 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
             </button>
           </div>
           
-          <small id="api-key-hint" class="text-muted mt-sm" style="display: block;">
+          <small id="api-key-hint" class="text-secondary mt-sm" style="display: block;">
             Your API key is securely stored locally and never transmitted to our servers.
           </small>
         </div>
@@ -102,7 +102,7 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
       <!-- Developer Tools -->
       <section aria-labelledby="dev-tools" class="card mt-lg" appScrollReveal [appScrollRevealDelay]="200">
         <h2 id="dev-tools">Developer Tools</h2>
-        <p class="text-muted mb-md">Quick links to debugging utilities and system insights.</p>
+        <p class="text-secondary mb-md">Quick links to debugging utilities and system insights.</p>
 
         <ul role="list" class="dev-tools-list">
           <li>
@@ -110,7 +110,7 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
               <span aria-hidden="true" class="tool-icon">📖</span> 
               <div class="tool-content">
                 <strong>API Swagger Docs</strong>
-                <span class="text-muted">Explore backend REST endpoints</span>
+                <span class="text-secondary">Explore backend REST endpoints</span>
               </div>
             </a>
           </li>
@@ -119,7 +119,7 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
               <span aria-hidden="true" class="tool-icon">🧠</span> 
               <div class="tool-content">
                 <strong>TRIZ Parameters API</strong>
-                <span class="text-muted">View the 39 standard TRIZ engineering parameters</span>
+                <span class="text-secondary">View the 39 standard TRIZ engineering parameters</span>
               </div>
             </a>
           </li>
@@ -128,7 +128,7 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
               <span aria-hidden="true" class="tool-icon">🎨</span> 
               <div class="tool-content">
                 <strong>CSS Debugger</strong>
-                <span class="text-muted">Inspect design tokens and semantic variables</span>
+                <span class="text-secondary">Inspect design tokens and semantic variables</span>
               </div>
             </a>
           </li>
@@ -137,7 +137,7 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
               <span aria-hidden="true" class="tool-icon">🕸️</span> 
               <div class="tool-content">
                 <strong>Nx Project Graph</strong>
-                <span class="text-muted">Run 'npm run graph' to visualize</span>
+                <span class="text-secondary">Run 'npm run graph' to visualize</span>
               </div>
             </div>
           </li>
@@ -287,7 +287,7 @@ import { ThemeService, DesignSystem } from '../../shared/services/theme.service'
     .tool-content strong {
       font-weight: var(--font-weight-medium);
     }
-    .tool-content .text-muted {
+    .tool-content .text-secondary {
       font-size: var(--font-size-sm);
     }
   `],
