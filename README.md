@@ -276,10 +276,10 @@ Podział ról w zespole projektowym na podstawie 5 głównych filarów oceny hac
 ```mermaid
 graph TD
     subgraph Team ["AI for Business"]
-        leader["Wojciech<br/>(Product Owner / Biznes)"]
+        leader["Wojciech Hebisz<br/>(Product Owner / Biznes)"]
         frontend["Olek<br/>(Frontend / UI/UX / A11Y)"]
         backend["Maks<br/>(Backend Developer)"]
-        ai_eng["Maks / Wojciech<br/>(AI / LLM Engineer)"]
+        ai_eng["Maks / Wojciech Hebisz<br/>(AI / LLM Engineer)"]
     end
 
     subgraph Pillars ["Odpowiedzialność (Filary Hackathonu)"]
