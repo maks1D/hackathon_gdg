@@ -41,6 +41,10 @@ export class TrizApiService {
     return this.apiService.post<{ frequencies: PrincipleFrequency[]; triplets: SampledTriplet[] }>(`/triz/project/${projectId}/contradiction/confirm`, {});
   }
 
+  generateMorphologicalBox(projectId: string): Observable<ApiResponse<{ dimensions: any[]; combinations: any[] }>> {
+    return this.apiService.post<{ dimensions: any[]; combinations: any[] }>(`/triz/project/${projectId}/morphological/box`, {});
+  }
+
   generateCandidates(projectId: string): Observable<ApiResponse<{
     trizCandidates: TrizCandidate[];
     morphologicalCandidates: TrizCandidate[];

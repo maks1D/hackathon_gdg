@@ -459,13 +459,8 @@ Respond in valid JSON:
 
   // ─── Step 4b: Generate Morphological Candidates via LLM ─────────
 
-  async generateMorphologicalCandidates(projectId: string) {
+  async generateMorphologicalBox(projectId: string) {
     const project = await this.getProjectOrThrow(projectId);
-
-    // Clear previous morphological candidates only
-    await this.prisma.trizCandidate.deleteMany({
-      where: { projectId, source: 'MORPHOLOGICAL' },
-    });
 
     // ── LLM Call 1: Decompose problem into 5 dimensions ──────────
     this.logger.log(`[Morph] Step 1/4: Decomposing problem into dimensions...`);
@@ -590,13 +585,12 @@ Respond in valid JSON with the SAME structure:
     const combinations: Array<Record<string, string>> = [];
     const usedKeys = new Set<string>();
 
-    // Helper: Calculate weight for a variant based on KPIs
     const getVariantWeight = (variant: string) => {
       let weight = 1;
       const lowerVariant = variant.toLowerCase();
       for (const kpi of kpis) {
         if (lowerVariant.includes(kpi.name.toLowerCase())) {
-          weight = 3; // Boost weight by 3x if variant matches KPI word
+          weight = 3;
         }
       }
       return weight;
@@ -612,7 +606,6 @@ Respond in valid JSON with the SAME structure:
         for (const dim of deduplicated.dimensions) {
           if (dim.variants.length === 0) continue;
           
-          // Roulette wheel selection based on KPI weights
           const weights = dim.variants.map(v => getVariantWeight(v));
           const totalWeight = weights.reduce((a, b) => a + b, 0);
           let randomNum = Math.random() * totalWeight;
@@ -636,7 +629,6 @@ Respond in valid JSON with the SAME structure:
       combinations.push(combo);
     }
 
-    // Persist the morph box and combinations
     await this.prisma.trizMorphBox.upsert({
       where: { projectId },
       create: {
@@ -650,12 +642,44 @@ Respond in valid JSON with the SAME structure:
       },
     });
 
+    return {
+      dimensions: deduplicated.dimensions,
+      combinations,
+    };
+  }
+
+  async generateMorphologicalCandidates(projectId: string) {
+    const project = await this.getProjectOrThrow(projectId);
+
+    // Clear previous morphological candidates only
+    await this.prisma.trizCandidate.deleteMany({
+      where: { projectId, source: 'MORPHOLOGICAL' },
+    });
+
+    // Check if we have a saved morphological box
+    const morphBoxRecord = await this.prisma.trizMorphBox.findUnique({
+      where: { projectId },
+    });
+
+    let dimensions: Array<{ id: string; label: string; variants: string[] }>;
+    let combinations: Array<Record<string, string>>;
+
+    if (!morphBoxRecord) {
+      this.logger.log(`[Morph] No saved morphological box found. Generating one...`);
+      const result = await this.generateMorphologicalBox(projectId);
+      dimensions = result.dimensions;
+      combinations = result.combinations;
+    } else {
+      dimensions = JSON.parse(morphBoxRecord.dimensions);
+      combinations = JSON.parse(morphBoxRecord.combinations || '[]');
+    }
+
     // ── Generate 3 candidate solutions from combinations ─────────
     const candidates = [];
 
     for (let i = 0; i < combinations.length; i++) {
       const combo = combinations[i];
-      const comboDescription = deduplicated.dimensions
+      const comboDescription = dimensions
         .map((dim) => `- ${dim.label}: ${combo[dim.id]?.replace(/_/g, ' ')}`)
         .join('\n');
 
@@ -710,7 +734,7 @@ Respond in valid JSON:
 
     this.logger.log(`Generated ${candidates.length} morphological candidates for project ${projectId}`);
     return {
-      morphBox: deduplicated.dimensions,
+      morphBox: dimensions,
       combinations,
       candidates,
     };
