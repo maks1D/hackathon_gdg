@@ -265,4 +265,47 @@ npx nx reset                 # Clear Nx cache (fix for frozen UI in nx graph)
 
 ---
 
+## 👥 Skład Zespołu & Odpowiedzialności
+
+<p align="left">
+  <img src="logo.png" alt="AI for Business Logo" width="120px" />
+</p>
+
+Podział ról w zespole projektowym na podstawie 5 głównych filarów oceny hackathonu GDG Wrocław:
+
+```mermaid
+graph TD
+    subgraph Team ["AI for Business"]
+        leader["Wojciech<br/>(Product Owner / Biznes)"]
+        frontend["Olek<br/>(Frontend / UI/UX / A11Y)"]
+        backend["Maks<br/>(Backend Developer)"]
+        ai_eng["Maks / Wojciech<br/>(AI / LLM Engineer)"]
+    end
+
+    subgraph Pillars ["Odpowiedzialność (Filary Hackathonu)"]
+        p1["Filar 1: Product Design & MVP<br/>• Weryfikacja pomysłu i ROI<br/>• Modele biznesowe i prezentacja"]
+        p23["Filar 2 & 3: UI/UX, A11Y & Angular<br/>• Standardy WCAG i A11Y<br/>• Angular Signals & Standalone"]
+        p4_be["Filar 3 & 4: Backend & Monorepo<br/>• NestJS, SQLite, Prisma ORM<br/>• Nx monorepo & modularność"]
+        p4_ai["Filar 4: LLM Engineering<br/>• Prompty, Zod Structured Outputs<br/>• Guardrails i telemetria kosztów"]
+    end
+
+    %% Zależności / powiązania ról z filarami
+    leader --> p1
+    frontend --> p23
+    backend --> p4_be
+    ai_eng --> p4_ai
+
+    classDef leader fill:#4f46e5,stroke:#312e81,color:#fff,stroke-width:2px;
+    classDef fe fill:#0d9488,stroke:#115e59,color:#fff,stroke-width:2px;
+    classDef be fill:#0891b2,stroke:#155e75,color:#fff,stroke-width:2px;
+    classDef ai fill:#b45309,stroke:#78350f,color:#fff,stroke-width:2px;
+
+    class leader leader;
+    class frontend fe;
+    class backend be;
+    class ai_eng ai;
+```
+
+---
+
 Built for **GDG Wrocław — Build with AI** 🏆

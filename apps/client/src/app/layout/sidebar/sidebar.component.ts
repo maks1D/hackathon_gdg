@@ -104,6 +104,7 @@ export class SidebarComponent {
   navItems = [
     { path: '/triz-solver', label: 'R&D Solver', icon: '🧠', id: 'triz-solver' },
     { path: '/dashboard', label: 'Dashboard', icon: '📊', id: 'dashboard' },
+    { path: '/team', label: 'Team', icon: '👥', id: 'team' },
     { path: '/settings', label: 'Settings', icon: '⚙️', id: 'settings' },
     { path: '/dev-options', label: 'Dev Options', icon: '🛠️', id: 'dev-options' },
   ];

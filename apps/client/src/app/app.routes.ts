@@ -39,6 +39,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'team',
+    title: 'Team — Build with AI',
+    loadComponent: () =>
+      import('./features/team/team.component').then(
+        (m) => m.TeamComponent,
+      ),
+  },
+  {
     path: 'dev-options',
     title: 'Dev Options — Build with AI',
     loadComponent: () =>
