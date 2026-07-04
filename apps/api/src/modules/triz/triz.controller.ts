@@ -143,6 +143,16 @@ export class TrizController {
     return this.trizService.generateMorphologicalCandidates(id);
   }
 
+  @Post('project/:id/morphological/box')
+  @ApiOperation({
+    summary: 'Generate Morphological Box and sample 3 combinations',
+    description:
+      'Decomposes problem into 5 dimensions, expands with synonyms, deduplicates against constraints, and samples 3 combinations.',
+  })
+  generateMorphologicalBox(@Param('id') id: string) {
+    return this.trizService.generateMorphologicalBox(id);
+  }
+
   // ─── Step 5: Evaluate Candidates ────────────────────────────────
 
   @Post('project/:id/evaluate')

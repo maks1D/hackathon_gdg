@@ -232,32 +232,103 @@ import { TrizApiService } from '@libs/http';
                 </button>
                 <button class="btn btn-secondary" (click)="regenerateContradiction()" [disabled]="isLoading()">Regenerate</button>
               } @else {
-                <button class="btn btn-primary" (click)="generateCandidates()" [disabled]="isLoading()" id="generate-candidates-btn">
+                <button class="btn btn-primary" (click)="generateMorphologicalBoxCall()" [disabled]="isLoading()" id="go-to-morph-btn">
                   @if (isLoading()) {
-                    <span class="spinner" role="status" aria-hidden="true"></span> Generating...
+                    <span class="spinner" role="status" aria-hidden="true"></span> Decomposing...
                   } @else {
-                    Generate Solutions
+                    Continue to Morphological Analysis
                   }
                 </button>
                 <button class="btn btn-secondary" (click)="resampleTriplets()" [disabled]="isLoading()">Re-sample Principles</button>
                 <button class="btn btn-secondary" (click)="regenerateContradiction()" [disabled]="isLoading()">Regenerate Contradiction</button>
               }
             </div>
-          @}
+          }
         </section>
       }
 
-      <!-- Step 4: Candidates Review -->
+      <!-- Step 4: Morphological Box Analysis -->
       @if (currentStep() === 4) {
+        <section class="card step-panel" aria-label="Morphological box analysis">
+          <h2>Step 4: Morphological Box Analysis</h2>
+          <p class="text-muted">The problem is decomposed into 5 distinct solution dimensions. Synonyms have been expanded, duplicates and constraints applied, and 3 distinct design pathways (combinations) have been sampled.</p>
+          
+          @if (morphBox().length > 0) {
+            <div class="candidate-card" style="margin-top: 1.5rem;">
+              <h3>Sampled Design Pathways (Combinations)</h3>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Select a combination path below to highlight the active design choice for each dimension in the matrix.</p>
+              
+              <div class="combo-tabs">
+                @for (combo of morphCombinations(); track $index; let i = $index) {
+                  <button 
+                    class="btn"
+                    [class.btn-primary]="selectedComboIndex() === i"
+                    [class.btn-secondary]="selectedComboIndex() !== i"
+                    (click)="selectedComboIndex.set(i)">
+                    Combination Path {{ i + 1 }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Morphological Matrix -->
+            <div class="morph-matrix">
+              @for (dim of morphBox(); track dim.id) {
+                <div class="morph-row">
+                  <div class="morph-dim-label">
+                    {{ dim.label }}
+                  </div>
+                  <div class="morph-variants">
+                    @for (variant of dim.variants; track variant) {
+                      <span 
+                        class="morph-variant-tag"
+                        [class.active-variant]="morphCombinations()[selectedComboIndex()]?.[dim.id] === variant">
+                        {{ variant.split('_').join(' ') }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="btn-row" style="margin-top: 2rem;">
+              <button class="btn btn-primary" (click)="generateCandidates()" [disabled]="isLoading()" id="generate-candidates-btn">
+                @if (isLoading()) {
+                  <span class="spinner" role="status" aria-hidden="true"></span> Generating...
+                } @else {
+                  Generate Candidates (TRIZ + Morphological)
+                }
+              </button>
+              <button class="btn btn-secondary" (click)="resampleMorphCombinations()" [disabled]="isLoading()">Re-sample Combinations</button>
+            </div>
+          } @else {
+            <p>No morphological box generated yet.</p>
+            <div class="btn-row">
+              <button class="btn btn-primary" (click)="generateMorphologicalBoxCall()" [disabled]="isLoading()">
+                @if (isLoading()) { <span class="spinner"></span> Generating... } @else { Generate Morphological Box }
+              </button>
+            </div>
+          }
+        </section>
+      }
+
+      <!-- Step 5: Candidates Review -->
+      @if (currentStep() === 5) {
         <section class="card step-panel" aria-label="Candidates review">
-          <h2>Step 4: Candidate Solutions</h2>
+          <h2>Step 5: Candidate Solutions</h2>
+          <p class="text-muted">Review all generated candidates: 3 based on TRIZ Inventive Principles, and 3 based on Morphological Analysis combinations.</p>
           <div class="candidates-grid">
             @for (c of candidates(); track c.id) {
-              <article class="candidate-card">
-                <h3>{{ c.title }}</h3>
+              <article class="candidate-card" [style.border-left]="c.source === 'MORPHOLOGICAL' ? '4px solid var(--accent-secondary, #8b5cf6)' : '4px solid var(--accent-primary, #6366f1)'">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                  <h3 style="margin: 0;">{{ c.title }}</h3>
+                  <span class="param-tag" [class.tag-positive]="c.source === 'TRIZ'" [class.tag-negative]="c.source === 'MORPHOLOGICAL'" style="font-size: 0.75rem;">
+                    {{ c.source }}
+                  </span>
+                </div>
                 <p class="candidate-desc">{{ c.description }}</p>
                 <div class="applied-rules">
-                  <strong>Applied Principles:</strong> {{ c.appliedRules }}
+                  <strong>Logic/Rules:</strong> {{ c.appliedRules }}
                 </div>
               </article>
             }
@@ -274,10 +345,10 @@ import { TrizApiService } from '@libs/http';
         </section>
       }
 
-      <!-- Step 5: Evaluation & Selection -->
-      @if (currentStep() === 5) {
+      <!-- Step 6: Evaluation & Selection -->
+      @if (currentStep() === 6) {
         <section class="card step-panel" aria-label="Evaluation and selection">
-          <h2>Step 5: Evaluation & Selection</h2>
+          <h2>Step 6: Evaluation & Selection</h2>
           @if (scoreboard().length > 0) {
             <table class="eval-table" aria-label="Candidate evaluation scores">
               <thead>
@@ -340,10 +411,10 @@ import { TrizApiService } from '@libs/http';
         </section>
       }
 
-      <!-- Step 6: Final Report -->
-      @if (currentStep() === 6) {
+      <!-- Step 7: Final Report -->
+      @if (currentStep() === 7) {
         <section class="card step-panel" aria-label="Final report">
-          <h2>Step 6: Final Report — Reasoning Trail</h2>
+          <h2>Step 7: Final Report — Reasoning Trail</h2>
           @if (selection()) {
             <div class="winner-banner">
               <h3>🏆 Winner: {{ selection()!.winner.title }}</h3>
@@ -518,6 +589,59 @@ import { TrizApiService } from '@libs/http';
       color: var(--text-primary);
       font-size: var(--font-size-base);
     }
+
+    .morph-matrix {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      margin-top: var(--spacing-lg);
+    }
+    .morph-row {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md) 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    @media (max-width: 768px) {
+      .morph-row {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-xs);
+      }
+    }
+    .morph-dim-label {
+      font-weight: var(--font-weight-semibold);
+      color: var(--text-primary);
+      font-size: var(--font-size-sm);
+    }
+    .morph-variants {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-xs);
+    }
+    .morph-variant-tag {
+      padding: var(--spacing-xs) var(--spacing-sm);
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-full);
+      color: var(--text-secondary);
+      font-size: var(--font-size-xs);
+      transition: all 0.2s ease;
+      text-transform: capitalize;
+    }
+    .morph-variant-tag.active-variant {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      font-weight: var(--font-weight-semibold);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
+    }
+    .combo-tabs {
+      display: flex;
+      gap: var(--spacing-sm);
+      flex-wrap: wrap;
+    }
   `],
 })
 export class TrizSolverComponent {
@@ -546,6 +670,10 @@ export class TrizSolverComponent {
   scoreboard = signal<ScoreboardEntry[]>([]);
   selection = signal<SelectionResult | null>(null);
 
+  morphBox = signal<any[]>([]);
+  morphCombinations = signal<any[]>([]);
+  selectedComboIndex = signal<number>(0);
+
   maxFrequency = computed(() => {
     const freqs = this.frequencies();
     return freqs.length > 0 ? Math.max(...freqs.map((f) => f.frequency)) : 1;
@@ -555,9 +683,10 @@ export class TrizSolverComponent {
     { id: 1, label: 'Problem' },
     { id: 2, label: 'Plan' },
     { id: 3, label: 'Triz Contradiction' },
-    { id: 4, label: 'Triz Candidates' },
-    { id: 5, label: 'Evaluation' },
-    { id: 6, label: 'Report' },
+    { id: 4, label: 'Morphological Analysis' },
+    { id: 5, label: 'R&D Candidates' },
+    { id: 6, label: 'Evaluation' },
+    { id: 7, label: 'Report' },
   ];
 
   goToStep(stepId: number): void {
@@ -783,7 +912,37 @@ export class TrizSolverComponent {
     this.confirmContradiction();
   }
 
-  // ─── Step 4: Generate Candidates (TRIZ + Morphological) ─────────
+  // ─── Step 4: Morphological Analysis ─────────────────────────────
+
+  generateMorphologicalBoxCall(): void {
+    const proj = this.project();
+    if (!proj) return;
+    this.isLoading.set(true);
+    this.announcement.set('Decomposing design space for Morphological Analysis...');
+
+    this.trizApi
+      .generateMorphologicalBox(proj.id)
+      .subscribe({
+        next: (res) => {
+          this.morphBox.set(res.data.dimensions);
+          this.morphCombinations.set(res.data.combinations);
+          this.selectedComboIndex.set(0);
+          this.goToStep(4);
+          this.isLoading.set(false);
+          this.announcement.set('Morphological analysis complete. Review matrix.');
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.announcement.set('Error generating morphological box.');
+        },
+      });
+  }
+
+  resampleMorphCombinations(): void {
+    this.generateMorphologicalBoxCall();
+  }
+
+  // ─── Step 5: Generate Candidates (TRIZ + Morphological) ─────────
 
   generateCandidates(): void {
     const proj = this.project();
@@ -800,7 +959,7 @@ export class TrizSolverComponent {
             ...res.data.morphologicalCandidates,
           ];
           this.candidates.set(all);
-          this.goToStep(4);
+          this.goToStep(5);
           this.isLoading.set(false);
           this.announcement.set(`${all.length} candidates generated (TRIZ + Morphological).`);
         },
@@ -811,7 +970,7 @@ export class TrizSolverComponent {
       });
   }
 
-  // ─── Step 5: Evaluate ───────────────────────────────────────────
+  // ─── Step 6: Evaluate ───────────────────────────────────────────
 
   evaluateCandidates(): void {
     const proj = this.project();
@@ -824,7 +983,7 @@ export class TrizSolverComponent {
       .subscribe({
         next: (res) => {
           this.scoreboard.set(res.data.scoreboard);
-          this.goToStep(5);
+          this.goToStep(6);
           this.isLoading.set(false);
           this.announcement.set('Evaluation complete. Review the scoreboard.');
         },
@@ -835,7 +994,7 @@ export class TrizSolverComponent {
       });
   }
 
-  // ─── Step 6: Select Winner ──────────────────────────────────────
+  // ─── Step 7: Select Winner ──────────────────────────────────────
 
   selectWinner(): void {
     const proj = this.project();
@@ -848,7 +1007,7 @@ export class TrizSolverComponent {
       .subscribe({
         next: (res) => {
           this.selection.set(res.data);
-          this.goToStep(6);
+          this.goToStep(7);
           this.isLoading.set(false);
           this.announcement.set('Report generated. The winner has been selected.');
         },
