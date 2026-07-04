@@ -108,7 +108,7 @@ Respond in valid JSON matching this exact schema:
 }`,
       systemPrompt: 'You are a TRIZ (Theory of Inventive Problem Solving) expert specializing in identifying technical contradictions. Always respond with valid JSON only.',
       provider: 'openrouter' as any,
-      model: 'google/gemini-2.5-flash',
+      model: 'openai/gpt-4o-mini',
       temperature: 0.4,
       maxTokens: 1024,
     });
@@ -276,9 +276,9 @@ Respond in valid JSON:
   "appliedRules": "Explanation of how each of the 3 principles was applied"
 }`,
         systemPrompt:
-          'You are an innovative R&D engineer expert in TRIZ-based inventive problem solving. Respond with valid JSON only.',
+          'You are an innovative R&D engineer expert in TRIZ-based inventive problem solving. Respond accurately with valid JSON only.',
         provider: 'openrouter' as any,
-        model: 'google/gemini-2.5-pro',
+        model: 'openai/gpt-4o-mini',
         temperature: 0.7,
         maxTokens: 2048,
       });
@@ -295,7 +295,7 @@ Respond in valid JSON:
           tripletId: triplet.id,
           title: parsed.title,
           description: parsed.description,
-          appliedRules: parsed.appliedRules,
+          appliedRules: typeof parsed.appliedRules === 'string' ? parsed.appliedRules : JSON.stringify(parsed.appliedRules, null, 2),
         },
       });
 
@@ -369,9 +369,9 @@ Respond in valid JSON:
   ]
 }`,
       systemPrompt:
-        'You are a multi-criteria decision analysis expert evaluating R&D concept solutions. Be objective and rigorous. Respond with valid JSON only.',
+        'You are a multi-criteria decision analysis expert who evaluates R&D concept solutions. Be objective and rigorous. Respond with valid JSON only.',
       provider: 'openrouter' as any,
-      model: 'google/gemini-2.5-flash',
+      model: 'openai/gpt-4o-mini',
       temperature: 0.3,
       maxTokens: 4096,
     });

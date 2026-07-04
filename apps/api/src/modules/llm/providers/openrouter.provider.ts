@@ -42,6 +42,7 @@ export class OpenRouterProvider implements LlmProvider {
           messages: request.messages,
           temperature: request.temperature,
           max_tokens: request.maxTokens,
+          response_format: { type: 'json_object' },
         }),
       });
 
