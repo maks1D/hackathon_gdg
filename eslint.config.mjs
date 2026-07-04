@@ -3,6 +3,7 @@ import tsparser from '@typescript-eslint/parser';
 import angularEslint from '@angular-eslint/eslint-plugin';
 import angularTemplateEslint from '@angular-eslint/eslint-plugin-template';
 import angularTemplateParser from '@angular-eslint/template-parser';
+import nxEslintPlugin from '@nx/eslint-plugin';
 
 export default [
   // ─── TypeScript files ─────────────────────────────────────────────
@@ -18,6 +19,7 @@ export default [
     plugins: {
       '@typescript-eslint': tseslint,
       '@angular-eslint': angularEslint,
+      '@nx': nxEslintPlugin,
     },
     rules: {
       // TypeScript best practices
@@ -37,6 +39,22 @@ export default [
       ],
       '@angular-eslint/no-empty-lifecycle-method': 'warn',
       '@angular-eslint/use-lifecycle-interface': 'error',
+
+      // Nx Module Boundaries
+      '@nx/enforce-module-boundaries': [
+        'error',
+        {
+          enforceBuildableLibDependency: true,
+          allow: [],
+          depConstraints: [
+            { sourceTag: 'type:app', onlyDependOnLibsWithTags: ['type:lib'] },
+            { sourceTag: 'type:lib', onlyDependOnLibsWithTags: ['type:lib'] },
+            { sourceTag: 'scope:client', onlyDependOnLibsWithTags: ['scope:client', 'scope:shared'] },
+            { sourceTag: 'scope:api', onlyDependOnLibsWithTags: ['scope:shared'] },
+            { sourceTag: 'scope:shared', onlyDependOnLibsWithTags: ['scope:shared'] }
+          ],
+        }
+      ],
     },
   },
 

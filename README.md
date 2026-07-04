@@ -58,7 +58,7 @@ npm start
 graph TD
     subgraph Apps ["Applications (apps/)"]
         client["client<br/>(Angular v20)"]
-        api["api<br/>(NestJS v10)"]
+        api["api<br/>(NestJS v11)"]
     end
 
     subgraph Libs ["Libraries (libs/)"]
@@ -114,21 +114,22 @@ graph TD
 
 ### Pillar 3: Angular, Nx, Debugging (20 pts) ✅
 - [x] Nx monorepo with proper `nx.json`, `project.json` configs
-- [x] Angular 19 standalone components
+- [x] Angular 20 standalone components
 - [x] New control flow (`@if`, `@for`)
 - [x] Signal-based state management
 - [x] Lazy-loaded routes with title metadata
 - [x] Shared libs with path aliases (`@libs/shared`, `@libs/http`)
-- [x] ESLint flat config with enforced module boundaries
+- [x] ESLint flat config with enforced module boundaries (`@nx/enforce-module-boundaries`)
+- [x] Solution-Style `tsconfig.json` for full IDE IntelliSense compatibility
 
 ### Pillar 4: Fullstack, Architecture, LLM Engineering (20 pts) ✅
 - [x] Clean Architecture (Domain → Application → Infrastructure → API)
-- [x] NestJS modular architecture (controllers, services, modules)
+- [x] NestJS 11 modular architecture (controllers, services, modules)
 - [x] **Not a simple API wrapper** — full orchestration pipeline
 - [x] Structured Outputs with **Zod** schema validation (5 built-in schemas)
 - [x] Dynamic prompt templates with variable interpolation
 - [x] Guardrails: confidence scoring, hallucination detection, human-in-the-loop
-- [x] Provider abstraction (OpenAI, Anthropic, Gemini — switchable at runtime)
+- [x] Provider abstraction (OpenRouter — switchable models at runtime)
 - [x] Prisma ORM with typed entities
 
 ### Pillar 5: Deployment, Scale & Optimization (20 pts) ✅
@@ -205,8 +206,8 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 hackathonv0/
 ├── apps/
-│   ├── client/          # Angular 19 frontend
-│   └── api/             # NestJS 10 backend
+│   ├── client/          # Angular 20 frontend
+│   └── api/             # NestJS 11 backend
 ├── libs/
 │   ├── shared/          # Shared interfaces & DTOs
 │   └── http/            # Angular API service
@@ -225,10 +226,8 @@ hackathonv0/
 | `DATABASE_URL` | `file:./dev.db` | Prisma database connection |
 | `API_PORT` | `3000` | NestJS server port |
 | `CORS_ORIGIN` | `http://localhost:4200` | Allowed CORS origin |
-| `LLM_DEFAULT_PROVIDER` | `openai` | Default LLM provider |
-| `OPENAI_API_KEY` | — | OpenAI API key |
-| `ANTHROPIC_API_KEY` | — | Anthropic API key |
-| `GEMINI_API_KEY` | — | Google Gemini API key |
+| `LLM_DEFAULT_PROVIDER` | `openrouter` | Default LLM provider |
+| `OPENROUTER_API_KEY` | — | OpenRouter API key |
 | `CACHE_TTL_SECONDS` | `3600` | Cache time-to-live |
 | `ENABLE_LLM_TELEMETRY` | `true` | Enable/disable telemetry logging |
 
@@ -260,7 +259,8 @@ npm run start:client         # Start only Angular
 npm run lint                 # Lint all projects
 npm run build                # Build all projects
 npm run prisma:studio        # Open Prisma Studio (DB browser)
-npm run graph                # Visualize Nx dependency graph
+npm run graph                # Visualize Nx dependency graph (Task & Project graph)
+npx nx reset                 # Clear Nx cache (fix for frozen UI in nx graph)
 ```
 
 ---

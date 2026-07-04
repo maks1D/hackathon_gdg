@@ -7,3 +7,4 @@ export * from './interfaces/llm.interface';
 export * from './interfaces/api-response.interface';
 export * from './dto/create-person.dto';
 export * from './dto/llm-request.dto';
+export * from './interfaces/triz.interface';

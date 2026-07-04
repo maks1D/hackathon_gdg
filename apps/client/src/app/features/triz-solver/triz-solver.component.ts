@@ -1,69 +1,21 @@
 import { Component, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
 // ─── Interfaces ─────────────────────────────────────────────────────
 
-interface KpiDto {
-  name: string;
-  weight: number;
-}
-
-interface TrizProject {
-  id: string;
-  title: string;
-  description: string;
-  targetSdgs: string;
-  constraints?: string;
-  kpis?: string;
-  status: string;
-}
-
-interface ContradictionResult {
-  improvingIds: number[];
-  improvingNames: string[];
-  worseningIds: number[];
-  worseningNames: string[];
-  ifThenButText: string;
-}
-
-interface PrincipleFrequency {
-  principleId: number;
-  name: string;
-  description: string;
-  frequency: number;
-}
-
-interface SampledTriplet {
-  index: number;
-  principleIds: number[];
-  principleNames: string[];
-}
-
-interface TrizCandidate {
-  id: string;
-  title: string;
-  description: string;
-  appliedRules: string;
-  source?: 'TRIZ' | 'MORPHOLOGICAL';
-  isDisqualified?: boolean;
-  disqualReason?: string;
-}
-
-interface ScoreboardEntry {
-  candidateId: string;
-  title: string;
-  isDisqualified?: boolean;
-  disqualReason?: string;
-  scores: Record<string, number>;
-  weightedScore: number;
-}
-
-interface SelectionResult {
-  winner: TrizCandidate;
-  reasoning: string;
-}
+import { 
+  TrizProject, 
+  ContradictionResult, 
+  PrincipleFrequency, 
+  SampledTriplet, 
+  TrizCandidate, 
+  ScoreboardEntry, 
+  SelectionResult,
+  KpiDto
+} from '@libs/shared';
+import { TrizApiService } from '@libs/http';
 
 // ─── Component ──────────────────────────────────────────────────────
 
@@ -567,7 +519,7 @@ interface SelectionResult {
   `],
 })
 export class TrizSolverComponent {
-  private readonly http = inject(HttpClient);
+  private readonly trizApi = inject(TrizApiService);
 
   // ─── Form state ─────────────────────────────────────────────────
   projectTitle = '';
@@ -626,12 +578,8 @@ export class TrizSolverComponent {
       .map((s) => parseInt(s.trim(), 10))
       .filter((n) => !isNaN(n));
 
-    this.http
-      .post<{ data: TrizProject }>('/api/triz/project', {
-        title: this.projectTitle,
-        description: this.problemDescription,
-        targetSdgs: sdgs,
-      })
+    this.trizApi
+      .createProject(this.projectTitle, this.problemDescription, sdgs)
       .subscribe({
         next: (res) => {
           this.project.set(res.data);
@@ -789,11 +737,8 @@ export class TrizSolverComponent {
   // ─── Step 2: Generate / Regenerate Contradiction ────────────────
 
   private generateContradictionCall(projectId: string): void {
-    this.http
-      .post<{ data: ContradictionResult }>(
-        `/api/triz/project/${projectId}/contradiction`,
-        {},
-      )
+    this.trizApi
+      .generateContradiction(projectId)
       .subscribe({
         next: (res) => {
           this.contradiction.set(res.data);
@@ -823,11 +768,8 @@ export class TrizSolverComponent {
     this.isLoading.set(true);
     this.announcement.set('Running matrix lookup and sampling principles...');
 
-    this.http
-      .post<{ data: { frequencies: PrincipleFrequency[]; triplets: SampledTriplet[] } }>(
-        `/api/triz/project/${proj.id}/contradiction/confirm`,
-        {},
-      )
+    this.trizApi
+      .confirmContradiction(proj.id)
       .subscribe({
         next: (res) => {
           this.frequencies.set(res.data.frequencies);
@@ -855,14 +797,8 @@ export class TrizSolverComponent {
     this.isLoading.set(true);
     this.announcement.set('Generating candidate solutions using TRIZ principles and Morphological Analysis...');
 
-    this.http
-      .post<{ data: {
-        trizCandidates: TrizCandidate[];
-        morphologicalCandidates: TrizCandidate[];
-      } }>(
-        `/api/triz/project/${proj.id}/candidates/generate`,
-        {},
-      )
+    this.trizApi
+      .generateCandidates(proj.id)
       .subscribe({
         next: (res) => {
           const all = [
@@ -889,11 +825,8 @@ export class TrizSolverComponent {
     this.isLoading.set(true);
     this.announcement.set('Evaluating candidates...');
 
-    this.http
-      .post<{ data: { scoreboard: ScoreboardEntry[] } }>(
-        `/api/triz/project/${proj.id}/evaluate`,
-        {},
-      )
+    this.trizApi
+      .evaluateCandidates(proj.id)
       .subscribe({
         next: (res) => {
           this.scoreboard.set(res.data.scoreboard);
@@ -916,11 +849,8 @@ export class TrizSolverComponent {
     this.isLoading.set(true);
     this.announcement.set('Selecting winner and generating report...');
 
-    this.http
-      .post<{ data: SelectionResult }>(
-        `/api/triz/project/${proj.id}/select`,
-        {},
-      )
+    this.trizApi
+      .selectWinner(proj.id)
       .subscribe({
         next: (res) => {
           this.selection.set(res.data);
