@@ -109,7 +109,9 @@ model TrizProject {
   title            String
   description      String
   targetSdgs       String               // JSON string array e.g. "[7, 9, 11]"
-  status           String               @default("CREATED") // CREATED | CONTRADICTION_REFORMULATED | PRINCIPLES_SAMPLED | CANDIDATES_GENERATED | EVALUATED | COMPLETED
+  constraints      String?              // JSON: ["battery", "chemical", ...]
+  kpis             String?              // JSON: [{"name": "Speed", "weight": 0.4}, ...]
+  status           String               @default("CREATED") // CREATED | CONSTRAINTS_EXTRACTED | CONTRADICTION_REFORMULATED | PRINCIPLES_SAMPLED | CANDIDATES_GENERATED | EVALUATED | COMPLETED
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -150,6 +152,8 @@ model TrizCandidate {
   description      String
   appliedRules     String
   source           String                @default("TRIZ") // TRIZ | MORPHOLOGICAL
+  isDisqualified   Boolean               @default(false)
+  disqualReason    String?
   createdAt        DateTime              @default(now())
 
   project          TrizProject           @relation(fields: [projectId], references: [id], onDelete: Cascade)

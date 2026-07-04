@@ -36,6 +36,20 @@ export interface SelectionDto {
   candidateId: string;
 }
 
+export interface KpiDto {
+  name: string;
+  weight: number;
+}
+
+export interface UpdateConstraintsDto {
+  constraints: string[];
+  kpis: KpiDto[];
+}
+
+export interface ModifyConstraintsDto {
+  prompt: string;
+}
+
 // ─── Service ────────────────────────────────────────────────────────
 
 /**
@@ -74,6 +88,137 @@ export class TrizService {
     return project;
   }
 
+  // ─── Step 1.5: Constraints & KPIs ───────────────────────────────
+
+  async extractConstraintsAndKpis(projectId: string) {
+    const project = await this.getProjectOrThrow(projectId);
+
+    this.logger.log(`Extracting constraints and KPIs for project ${projectId}...`);
+
+    const response = await this.llm.complete({
+      prompt: `Analyze the following engineering problem and extract two things:
+1. Constraints (Blacklist): A list of hard constraints, forbidden technologies, or concepts that must NOT be used. E.g. if the user says "no chemical batteries", the list should include "chemical batteries", "lithium-ion", etc. If there are no obvious constraints, infer some logical ones or return an empty array.
+2. KPIs (Key Performance Indicators): A list of 2 to 5 primary business/engineering goals with relative weights (summing exactly to 1.0). E.g. Speed: 0.4, Reliability: 0.4, Scalability: 0.2.
+
+PROBLEM:
+${project.description}
+
+Respond in valid JSON:
+{
+  "constraints": ["forbidden_word_1", "forbidden_word_2"],
+  "kpis": [
+    { "name": "KPI 1", "weight": 0.5 },
+    { "name": "KPI 2", "weight": 0.5 }
+  ]
+}`,
+      systemPrompt: 'You are an expert systems engineer and business analyst. Extract hard constraints and weighted KPIs from problem descriptions. Respond with valid JSON only. Weights must sum to 1.0.',
+      provider: 'openrouter' as any,
+      model: 'openai/gpt-4o-mini',
+      temperature: 0.2,
+      maxTokens: 1024,
+    });
+
+    const parsed = this.parseJsonResponse<{
+      constraints: string[];
+      kpis: KpiDto[];
+    }>(response.content);
+
+    // Normalize weights to ensure they sum to 1.0
+    const totalWeight = parsed.kpis.reduce((sum, kpi) => sum + kpi.weight, 0);
+    if (totalWeight > 0) {
+      parsed.kpis.forEach(kpi => kpi.weight = Math.round((kpi.weight / totalWeight) * 100) / 100);
+    }
+
+    const updated = await this.prisma.trizProject.update({
+      where: { id: projectId },
+      data: {
+        constraints: JSON.stringify(parsed.constraints),
+        kpis: JSON.stringify(parsed.kpis),
+        status: 'CONSTRAINTS_EXTRACTED',
+      },
+    });
+
+    return {
+      constraints: parsed.constraints,
+      kpis: parsed.kpis,
+      status: updated.status,
+    };
+  }
+
+  async updateConstraintsAndKpis(projectId: string, dto: UpdateConstraintsDto) {
+    await this.getProjectOrThrow(projectId);
+
+    const updated = await this.prisma.trizProject.update({
+      where: { id: projectId },
+      data: {
+        constraints: JSON.stringify(dto.constraints),
+        kpis: JSON.stringify(dto.kpis),
+        status: 'CONSTRAINTS_EXTRACTED',
+      },
+    });
+
+    return {
+      constraints: dto.constraints,
+      kpis: dto.kpis,
+      status: updated.status,
+    };
+  }
+
+  async modifyConstraintsAndKpisWithPrompt(projectId: string, dto: ModifyConstraintsDto) {
+    const project = await this.getProjectOrThrow(projectId);
+
+    const currentConstraints = project.constraints ? JSON.parse(project.constraints) : [];
+    const currentKpis = project.kpis ? JSON.parse(project.kpis) : [];
+
+    this.logger.log(`Modifying constraints/KPIs via AI for project ${projectId}...`);
+
+    const response = await this.llm.complete({
+      prompt: `The user wants to modify the current Constraints and KPIs for their project based on the following instruction:
+USER INSTRUCTION: "${dto.prompt}"
+
+CURRENT CONSTRAINTS: ${JSON.stringify(currentConstraints)}
+CURRENT KPIS: ${JSON.stringify(currentKpis)}
+
+Update the constraints and KPIs according to the user's instructions.
+Respond in valid JSON:
+{
+  "constraints": ["updated_constraint_1", ...],
+  "kpis": [
+    { "name": "KPI 1", "weight": 0.5 }, ...
+  ]
+}`,
+      systemPrompt: 'You are an expert systems engineer. Modify constraints and KPIs according to user feedback. Respond with valid JSON only. Weights must sum to 1.0.',
+      provider: 'openrouter' as any,
+      model: 'openai/gpt-4o-mini',
+      temperature: 0.3,
+      maxTokens: 1024,
+    });
+
+    const parsed = this.parseJsonResponse<{
+      constraints: string[];
+      kpis: KpiDto[];
+    }>(response.content);
+
+    const totalWeight = parsed.kpis.reduce((sum, kpi) => sum + kpi.weight, 0);
+    if (totalWeight > 0) {
+      parsed.kpis.forEach(kpi => kpi.weight = Math.round((kpi.weight / totalWeight) * 100) / 100);
+    }
+
+    const updated = await this.prisma.trizProject.update({
+      where: { id: projectId },
+      data: {
+        constraints: JSON.stringify(parsed.constraints),
+        kpis: JSON.stringify(parsed.kpis),
+      },
+    });
+
+    return {
+      constraints: parsed.constraints,
+      kpis: parsed.kpis,
+      status: updated.status,
+    };
+  }
+
   // ─── Step 2: Generate Contradiction via LLM ─────────────────────
 
   async generateContradiction(projectId: string): Promise<ContradictionResult> {
@@ -84,6 +229,9 @@ export class TrizService {
       .map((p) => `${p.id}: ${p.name}`)
       .join('\n');
 
+    const constraints = project.constraints ? JSON.parse(project.constraints) : [];
+    const kpis = project.kpis ? JSON.parse(project.kpis) : [];
+
     const response = await this.llm.complete({
       prompt: `Analyze the following inventive engineering problem and identify the TRIZ Technical Contradiction.
 
@@ -91,11 +239,13 @@ PROBLEM:
 ${project.description}
 
 TARGET SDGs: ${project.targetSdgs}
+CONSTRAINTS (Forbidden concepts/technologies): ${JSON.stringify(constraints)}
+KPIs (Key Performance Indicators): ${JSON.stringify(kpis)}
 
 INSTRUCTIONS:
-1. Identify exactly 3 standard TRIZ engineering parameters that would IMPROVE if the problem were solved (THEN conditions).
+1. Identify exactly 3 standard TRIZ engineering parameters that would IMPROVE if the problem were solved (THEN conditions). Keep the CONSTRAINTS and KPIs in mind.
 2. Identify exactly 3 standard TRIZ engineering parameters that would WORSEN as a side-effect (BUT conditions).
-3. Formulate an IF-THEN-BUT statement that captures the core trade-off.
+3. Formulate an IF-THEN-BUT statement that captures the core trade-off, strictly avoiding anything on the CONSTRAINTS list.
 
 AVAILABLE TRIZ PARAMETERS (use IDs from this list):
 ${parameterList}
@@ -394,7 +544,10 @@ Respond in valid JSON with the SAME structure:
     this.logger.log(`[Morph] Expanded to ${expanded.dimensions.map(d => d.variants.length).join(',')} variants per dimension`);
 
     // ── LLM Call 3: Deduplicate overlapping variants ──────────────
-    this.logger.log(`[Morph] Step 3/4: Deduplicating overlapping variants...`);
+    this.logger.log(`[Morph] Step 3/4: Deduplicating overlapping variants and applying CONSTRAINTS...`);
+
+    const constraints = project.constraints ? JSON.parse(project.constraints) : [];
+    const kpis = project.kpis ? JSON.parse(project.kpis) as KpiDto[] : [];
 
     const dedupeResponse = await this.llm.complete({
       prompt: `Review the following expanded morphological box and remove redundant/overlapping variants. Two variants overlap if they describe essentially the same approach.
@@ -402,9 +555,13 @@ Respond in valid JSON with the SAME structure:
 EXPANDED MORPH BOX:
 ${JSON.stringify(expanded.dimensions, null, 2)}
 
+CONSTRAINTS (Forbidden concepts):
+${JSON.stringify(constraints)}
+
 Rules:
+- STRICT RULE: You MUST remove ANY variant that relates to the CONSTRAINTS. If a variant implies a forbidden technology, delete it completely.
 - Within each dimension, remove variants that are too similar to each other.
-- Keep at least 4 variants per dimension.
+- Keep at least 4 variants per dimension (if possible after removing constraints).
 - Keep the most descriptive variant name when removing duplicates.
 - Do NOT remove variants across different dimensions (cross-dimension overlap is fine).
 
@@ -414,7 +571,7 @@ Respond in valid JSON with the SAME structure:
     { "id": "...", "label": "...", "variants": ["kept_variant_1", "kept_variant_2", ...] }
   ]
 }`,
-      systemPrompt: 'You are a systems engineering expert performing morphological analysis. Be rigorous in identifying true overlaps. Respond with valid JSON only.',
+      systemPrompt: 'You are a systems engineering expert performing morphological analysis. Be rigorous in identifying true overlaps and enforcing constraints. Respond with valid JSON only.',
       provider: 'openrouter' as any,
       model: 'openai/gpt-4o-mini',
       temperature: 0.3,
@@ -428,10 +585,22 @@ Respond in valid JSON with the SAME structure:
     this.logger.log(`[Morph] Deduplicated to ${deduplicated.dimensions.map(d => d.variants.length).join(',')} variants per dimension`);
 
     // ── Step 4: Random sampling of 3 combinations ────────────────
-    this.logger.log(`[Morph] Step 4/4: Sampling 3 random combinations...`);
+    this.logger.log(`[Morph] Step 4/4: Sampling 3 combinations with KPI boosting...`);
 
     const combinations: Array<Record<string, string>> = [];
     const usedKeys = new Set<string>();
+
+    // Helper: Calculate weight for a variant based on KPIs
+    const getVariantWeight = (variant: string) => {
+      let weight = 1;
+      const lowerVariant = variant.toLowerCase();
+      for (const kpi of kpis) {
+        if (lowerVariant.includes(kpi.name.toLowerCase())) {
+          weight = 3; // Boost weight by 3x if variant matches KPI word
+        }
+      }
+      return weight;
+    };
 
     for (let i = 0; i < 3; i++) {
       let combo: Record<string, string>;
@@ -441,8 +610,23 @@ Respond in valid JSON with the SAME structure:
       do {
         combo = {};
         for (const dim of deduplicated.dimensions) {
-          const randomIndex = Math.floor(Math.random() * dim.variants.length);
-          combo[dim.id] = dim.variants[randomIndex];
+          if (dim.variants.length === 0) continue;
+          
+          // Roulette wheel selection based on KPI weights
+          const weights = dim.variants.map(v => getVariantWeight(v));
+          const totalWeight = weights.reduce((a, b) => a + b, 0);
+          let randomNum = Math.random() * totalWeight;
+          let selectedIndex = 0;
+          
+          for (let j = 0; j < weights.length; j++) {
+            randomNum -= weights[j];
+            if (randomNum <= 0) {
+              selectedIndex = j;
+              break;
+            }
+          }
+          
+          combo[dim.id] = dim.variants[selectedIndex];
         }
         key = Object.values(combo).sort().join('|');
         attempts++;
@@ -534,10 +718,9 @@ Respond in valid JSON:
 
   // ─── Step 5: Evaluate Candidates via LLM ────────────────────────
 
-  async evaluateCandidates(
-    projectId: string,
-    weights?: EvaluationWeights,
-  ) {
+  // ─── Step 5: Evaluate Candidates via LLM ────────────────────────
+
+  async evaluateCandidates(projectId: string) {
     const project = await this.getProjectOrThrow(projectId);
     const candidates = await this.prisma.trizCandidate.findMany({
       where: { projectId },
@@ -549,12 +732,84 @@ Respond in valid JSON:
       );
     }
 
-    const candidateDescriptions = candidates
+    const constraints = project.constraints ? JSON.parse(project.constraints) : [];
+    const kpis = project.kpis ? JSON.parse(project.kpis) as KpiDto[] : [];
+
+    // --- GATE 1: Disqualification based on Constraints (Blacklist) ---
+    this.logger.log(`[Eval Gate 1] Checking ${candidates.length} candidates against constraints...`);
+    const validCandidates = [];
+    
+    for (const candidate of candidates) {
+      let disqualified = false;
+      let reason = '';
+
+      const contentToScan = `${candidate.title} ${candidate.description} ${candidate.appliedRules}`.toLowerCase();
+      
+      for (const constraint of constraints) {
+        if (contentToScan.includes(constraint.toLowerCase())) {
+          disqualified = true;
+          reason = `Violates constraint: "${constraint}"`;
+          break;
+        }
+      }
+
+      if (disqualified) {
+        await this.prisma.trizCandidate.update({
+          where: { id: candidate.id },
+          data: { isDisqualified: true, disqualReason: reason },
+        });
+        candidate.isDisqualified = true;
+        candidate.disqualReason = reason;
+      } else {
+        // Reset just in case it's a re-run
+        await this.prisma.trizCandidate.update({
+          where: { id: candidate.id },
+          data: { isDisqualified: false, disqualReason: null },
+        });
+        candidate.isDisqualified = false;
+        candidate.disqualReason = null;
+        validCandidates.push(candidate);
+      }
+    }
+
+    if (validCandidates.length === 0) {
+      // All disqualified, mark as evaluated but return early
+      await this.prisma.trizProject.update({
+        where: { id: projectId },
+        data: { status: 'EVALUATED' },
+      });
+      return {
+        scoreboard: candidates.map(c => ({
+          candidateId: c.id,
+          title: c.title,
+          isDisqualified: true,
+          disqualReason: c.disqualReason,
+          scores: {},
+          weightedScore: 0
+        })),
+        rawEvaluations: []
+      };
+    }
+
+    // --- GATE 2: AI Judge using KPIs ---
+    this.logger.log(`[Eval Gate 2] AI Judge scoring ${validCandidates.length} valid candidates...`);
+
+    const candidateDescriptions = validCandidates
       .map(
         (c, i) =>
           `Candidate ${i + 1} (ID: ${c.id}):\n  Title: ${c.title}\n  Description: ${c.description}`,
       )
       .join('\n\n');
+
+    // Build the dynamic prompt for KPIs
+    const kpiInstructions = kpis.length > 0 
+      ? kpis.map((kpi, idx) => `${idx + 1}. ${kpi.name} (Weight: ${kpi.weight})`).join('\n')
+      : '1. Overall Quality (Weight: 1.0)';
+
+    // Dynamic JSON schema matching the kpis
+    const jsonExampleCriteria = kpis.length > 0
+      ? kpis.map(kpi => `{ "criteriaName": "${kpi.name}", "score": 8, "rationale": "..." }`).join(',\n        ')
+      : `{ "criteriaName": "Overall Quality", "score": 8, "rationale": "..." }`;
 
     const response = await this.llm.complete({
       prompt: `Evaluate each of the following candidate solutions for the engineering problem.
@@ -567,11 +822,8 @@ TARGET SDGs: ${project.targetSdgs}
 CANDIDATES:
 ${candidateDescriptions}
 
-Score each candidate on a scale of 1-10 for each criterion:
-1. SDG Alignment — How well does it address the target Sustainable Development Goals?
-2. Feasibility — How technically viable and implementable is it?
-3. Cost — How cost-effective is the solution? (Higher score = lower cost)
-4. Complexity — How simple is the implementation? (Higher score = simpler)
+Score each candidate on a scale of 1-10 for each of the following Key Performance Indicators (KPIs):
+${kpiInstructions}
 
 Provide a brief rationale for each score.
 
@@ -581,10 +833,7 @@ Respond in valid JSON:
     {
       "candidateId": "actual-uuid-from-above",
       "criteriaScores": [
-        { "criteriaName": "SDG Alignment", "score": 8, "rationale": "..." },
-        { "criteriaName": "Feasibility", "score": 7, "rationale": "..." },
-        { "criteriaName": "Cost", "score": 6, "rationale": "..." },
-        { "criteriaName": "Complexity", "score": 5, "rationale": "..." }
+        ${jsonExampleCriteria}
       ]
     }
   ]
@@ -627,22 +876,26 @@ Respond in valid JSON:
       }
     }
 
-    // Calculate weighted scores
-    const w = weights ?? {
-      sdgAlignment: 1,
-      feasibility: 1,
-      cost: 1,
-      complexity: 1,
-    };
-
-    const weightMap: Record<string, number> = {
-      'SDG Alignment': w.sdgAlignment,
-      Feasibility: w.feasibility,
-      Cost: w.cost,
-      Complexity: w.complexity,
-    };
+    // Build weight map from Project KPIs
+    const weightMap: Record<string, number> = {};
+    if (kpis.length > 0) {
+      kpis.forEach(k => weightMap[k.name] = k.weight);
+    } else {
+      weightMap['Overall Quality'] = 1.0;
+    }
 
     const scoreboard = candidates.map((candidate) => {
+      if (candidate.isDisqualified) {
+        return {
+          candidateId: candidate.id,
+          title: candidate.title,
+          isDisqualified: true,
+          disqualReason: candidate.disqualReason,
+          scores: {},
+          weightedScore: 0
+        };
+      }
+
       const candidateEval = parsed.evaluations.find(
         (e) => e.candidateId === candidate.id,
       );
@@ -662,6 +915,8 @@ Respond in valid JSON:
       return {
         candidateId: candidate.id,
         title: candidate.title,
+        isDisqualified: false,
+        disqualReason: null,
         scores,
         weightedScore:
           totalWeight > 0
@@ -678,7 +933,7 @@ Respond in valid JSON:
     });
 
     this.logger.log(
-      `Evaluated ${candidates.length} candidates for project ${projectId}`,
+      `Evaluated ${validCandidates.length} valid candidates (and disqualified ${candidates.length - validCandidates.length}) for project ${projectId}`,
     );
 
     return {

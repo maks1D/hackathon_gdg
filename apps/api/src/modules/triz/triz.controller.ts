@@ -12,6 +12,8 @@ import {
   ConfirmContradictionDto,
   EvaluationWeights,
   SelectionDto,
+  UpdateConstraintsDto,
+  ModifyConstraintsDto,
 } from './triz.service';
 import { TrizMatrixService } from './triz-matrix.service';
 
@@ -41,6 +43,32 @@ export class TrizController {
   @ApiOperation({ summary: 'Get full project state with all related data' })
   getProject(@Param('id') id: string) {
     return this.trizService.getProject(id);
+  }
+
+  // ─── Step 1.5: Constraints & KPIs ───────────────────────────────
+
+  @Post('project/:id/analyze-constraints')
+  @ApiOperation({ summary: 'Extract Constraints and KPIs from project description' })
+  analyzeConstraints(@Param('id') id: string) {
+    return this.trizService.extractConstraintsAndKpis(id);
+  }
+
+  @Post('project/:id/update-constraints')
+  @ApiOperation({ summary: 'Manually update Constraints and KPIs' })
+  updateConstraints(
+    @Param('id') id: string,
+    @Body() dto: UpdateConstraintsDto,
+  ) {
+    return this.trizService.updateConstraintsAndKpis(id, dto);
+  }
+
+  @Post('project/:id/modify-constraints')
+  @ApiOperation({ summary: 'Modify Constraints and KPIs via AI prompt' })
+  modifyConstraints(
+    @Param('id') id: string,
+    @Body() dto: ModifyConstraintsDto,
+  ) {
+    return this.trizService.modifyConstraintsAndKpisWithPrompt(id, dto);
   }
 
   // ─── Step 2: Generate Contradiction ─────────────────────────────
@@ -121,13 +149,10 @@ export class TrizController {
   @ApiOperation({
     summary: 'Evaluate candidates using multi-criteria decision analysis',
     description:
-      'LLM scores each candidate on SDG Alignment, Feasibility, Cost, and Complexity. Weights can be customized.',
+      'LLM scores each candidate using dynamic project KPIs. Also applies Gate 1 Disqualification.',
   })
-  evaluateCandidates(
-    @Param('id') id: string,
-    @Body() weights?: EvaluationWeights,
-  ) {
-    return this.trizService.evaluateCandidates(id, weights);
+  evaluateCandidates(@Param('id') id: string) {
+    return this.trizService.evaluateCandidates(id);
   }
 
   // ─── Step 6: Select Winner ──────────────────────────────────────

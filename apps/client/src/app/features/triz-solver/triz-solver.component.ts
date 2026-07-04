@@ -5,11 +5,18 @@ import { CommonModule } from '@angular/common';
 
 // ─── Interfaces ─────────────────────────────────────────────────────
 
+interface KpiDto {
+  name: string;
+  weight: number;
+}
+
 interface TrizProject {
   id: string;
   title: string;
   description: string;
   targetSdgs: string;
+  constraints?: string;
+  kpis?: string;
   status: string;
 }
 
@@ -40,11 +47,15 @@ interface TrizCandidate {
   description: string;
   appliedRules: string;
   source?: 'TRIZ' | 'MORPHOLOGICAL';
+  isDisqualified?: boolean;
+  disqualReason?: string;
 }
 
 interface ScoreboardEntry {
   candidateId: string;
   title: string;
+  isDisqualified?: boolean;
+  disqualReason?: string;
   scores: Record<string, number>;
   weightedScore: number;
 }
@@ -128,6 +139,69 @@ interface SelectionResult {
               }
             </button>
           </form>
+        </section>
+      }
+
+      <!-- Step 1.5: Constraints & KPIs Review -->
+      @if (currentStep() === 1.5) {
+        <section class="card step-panel" aria-label="Constraints and KPIs">
+          <h2>Step 1.5: Constraints & KPIs</h2>
+          <p class="text-muted">Review the extracted constraints (blacklist) and KPIs. Modify them manually or ask AI to adjust them.</p>
+          
+          <div class="triplets-grid" style="grid-template-columns: 1fr 1fr;">
+            <!-- KPIs Column -->
+            <div class="candidate-card">
+              <h3>KPIs (Business Goals)</h3>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Weights must sum to 1.0. Used later by AI Judge.</p>
+              
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                @for (kpi of kpis(); track $index) {
+                  <div style="display: flex; gap: 0.5rem;">
+                    <input class="form-input" [value]="kpi.name" (input)="updateKpiName($index, $event)" placeholder="KPI Name" style="flex: 2" />
+                    <input class="form-input" type="number" step="0.1" min="0" max="1" [value]="kpi.weight" (input)="updateKpiWeight($index, $event)" style="flex: 1" />
+                    <button class="btn btn-secondary" (click)="removeKpi($index)">X</button>
+                  </div>
+                }
+                <button class="btn btn-secondary" style="margin-top: 0.5rem;" (click)="addKpi()">+ Add KPI</button>
+              </div>
+            </div>
+
+            <!-- Constraints Column -->
+            <div class="candidate-card">
+              <h3>Constraints (Blacklist)</h3>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Forbidden technologies or concepts. Triggers immediate disqualification.</p>
+              
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                @for (constraint of constraints(); track $index) {
+                  <div style="display: flex; gap: 0.5rem;">
+                    <input class="form-input" [value]="constraint" (input)="updateConstraint($index, $event)" placeholder="Constraint" style="flex: 1" />
+                    <button class="btn btn-secondary" (click)="removeConstraint($index)">X</button>
+                  </div>
+                }
+                <button class="btn btn-secondary" style="margin-top: 0.5rem;" (click)="addConstraint()">+ Add Constraint</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Modification Prompt -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Modify with AI</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input class="form-input" [(ngModel)]="modifyPrompt" placeholder="e.g., Make speed the most important KPI and ban all fossil fuels" />
+              <button class="btn btn-secondary" (click)="modifyConstraintsWithAI()" [disabled]="isLoading() || !modifyPrompt">
+                @if (isLoading()) { <span class="spinner"></span> } @else { Refine }
+              </button>
+            </div>
+          </div>
+
+          <div class="btn-row" style="margin-top: 1.5rem;">
+            <button class="btn btn-primary" (click)="acceptConstraints()" [disabled]="isLoading()">
+              @if (isLoading()) { <span class="spinner"></span> } @else { Accept & Continue }
+            </button>
+            <button class="btn" style="background-color: var(--accent-danger, #ef4444); color: white;" (click)="rejectConstraints()" [disabled]="isLoading()">
+              Reject (Back)
+            </button>
+          </div>
         </section>
       }
 
@@ -255,22 +329,46 @@ interface SelectionResult {
               <thead>
                 <tr>
                   <th scope="col">Candidate</th>
-                  <th scope="col">SDG Alignment</th>
-                  <th scope="col">Feasibility</th>
-                  <th scope="col">Cost</th>
-                  <th scope="col">Complexity</th>
+                  @if (kpis().length > 0) {
+                    @for (kpi of kpis(); track kpi.name) {
+                      <th scope="col">{{ kpi.name }}</th>
+                    }
+                  } @else {
+                    <th scope="col">Overall Quality</th>
+                  }
                   <th scope="col">Weighted Score</th>
                 </tr>
               </thead>
               <tbody>
                 @for (entry of scoreboard(); track entry.candidateId; let i = $index) {
-                  <tr [class.winner-row]="i === 0">
-                    <td>{{ entry.title }}</td>
-                    <td>{{ entry.scores['SDG Alignment'] || '-' }}/10</td>
-                    <td>{{ entry.scores['Feasibility'] || '-' }}/10</td>
-                    <td>{{ entry.scores['Cost'] || '-' }}/10</td>
-                    <td>{{ entry.scores['Complexity'] || '-' }}/10</td>
-                    <td class="score-cell">{{ entry.weightedScore }}</td>
+                  <tr [class.winner-row]="i === 0 && !entry.isDisqualified">
+                    <td>
+                      {{ entry.title }}
+                      @if (entry.isDisqualified) {
+                        <br><span style="color: var(--accent-danger, #ef4444); font-size: 0.8em; font-weight: bold;">DISQUALIFIED</span>
+                        <br><span style="color: var(--accent-danger, #ef4444); font-size: 0.75em;">{{ entry.disqualReason }}</span>
+                      }
+                    </td>
+                    
+                    @if (entry.isDisqualified) {
+                      @if (kpis().length > 0) {
+                        @for (kpi of kpis(); track kpi.name) {
+                          <td style="color: var(--text-muted);">-</td>
+                        }
+                      } @else {
+                        <td style="color: var(--text-muted);">-</td>
+                      }
+                    } @else {
+                      @if (kpis().length > 0) {
+                        @for (kpi of kpis(); track kpi.name) {
+                          <td>{{ entry.scores[kpi.name] || '-' }}/10</td>
+                        }
+                      } @else {
+                        <td>{{ entry.scores['Overall Quality'] || '-' }}/10</td>
+                      }
+                    }
+                    
+                    <td class="score-cell" [style.color]="entry.isDisqualified ? 'var(--text-muted)' : ''">{{ entry.weightedScore }}</td>
                   </tr>
                 }
               </tbody>
@@ -482,6 +580,10 @@ export class TrizSolverComponent {
   announcement = signal('');
 
   project = signal<TrizProject | null>(null);
+  constraints = signal<string[]>([]);
+  kpis = signal<KpiDto[]>([]);
+  modifyPrompt = signal('');
+
   contradiction = signal<ContradictionResult | null>(null);
   frequencies = signal<PrincipleFrequency[]>([]);
   triplets = signal<SampledTriplet[]>([]);
@@ -496,6 +598,7 @@ export class TrizSolverComponent {
 
   steps = [
     { id: 1, label: 'Problem' },
+    { id: 1.5, label: 'Constraints' },
     { id: 2, label: 'Contradiction' },
     { id: 3, label: 'Principles' },
     { id: 4, label: 'Candidates' },
@@ -510,7 +613,7 @@ export class TrizSolverComponent {
     if (!this.projectTitle.trim() || !this.problemDescription.trim()) return;
 
     this.isLoading.set(true);
-    this.announcement.set('Creating project and analyzing problem...');
+    this.announcement.set('Creating project...');
 
     const sdgs = this.sdgInput
       .split(',')
@@ -526,13 +629,155 @@ export class TrizSolverComponent {
       .subscribe({
         next: (res) => {
           this.project.set(res.data);
-          this.generateContradictionCall(res.data.id);
+          this.analyzeConstraintsCall(res.data.id);
         },
         error: () => {
           this.isLoading.set(false);
           this.announcement.set('Error creating project.');
         },
       });
+  }
+
+  // ─── Step 1.5: Analyze & Edit Constraints / KPIs ────────────────
+
+  analyzeConstraintsCall(projectId: string): void {
+    this.announcement.set('Analyzing problem to extract Constraints and KPIs...');
+    this.http
+      .post<{ data: { constraints: string[]; kpis: KpiDto[] } }>(
+        `/api/triz/project/${projectId}/analyze-constraints`,
+        {},
+      )
+      .subscribe({
+        next: (res) => {
+          this.constraints.set(res.data.constraints);
+          this.kpis.set(res.data.kpis);
+          this.currentStep.set(1.5);
+          this.isLoading.set(false);
+          this.announcement.set('Constraints and KPIs extracted. Please review.');
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.announcement.set('Error extracting constraints.');
+        },
+      });
+  }
+
+  addConstraint(): void {
+    this.constraints.update(c => [...c, '']);
+  }
+
+  removeConstraint(index: number): void {
+    this.constraints.update(c => {
+      const copy = [...c];
+      copy.splice(index, 1);
+      return copy;
+    });
+  }
+
+  updateConstraint(index: number, event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.constraints.update(c => {
+      const copy = [...c];
+      copy[index] = val;
+      return copy;
+    });
+  }
+
+  addKpi(): void {
+    this.kpis.update(k => [...k, { name: '', weight: 0.1 }]);
+  }
+
+  removeKpi(index: number): void {
+    this.kpis.update(k => {
+      const copy = [...k];
+      copy.splice(index, 1);
+      return copy;
+    });
+  }
+
+  updateKpiName(index: number, event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.kpis.update(k => {
+      const copy = [...k];
+      copy[index] = { ...copy[index], name: val };
+      return copy;
+    });
+  }
+
+  updateKpiWeight(index: number, event: Event): void {
+    const val = parseFloat((event.target as HTMLInputElement).value);
+    this.kpis.update(k => {
+      const copy = [...k];
+      copy[index] = { ...copy[index], weight: val || 0 };
+      return copy;
+    });
+  }
+
+  normalizeKpiWeights(): void {
+    this.kpis.update(kpis => {
+      const copy = [...kpis];
+      const total = copy.reduce((sum, k) => sum + k.weight, 0);
+      if (total > 0) {
+        return copy.map(k => ({ ...k, weight: Math.round((k.weight / total) * 100) / 100 }));
+      }
+      return copy;
+    });
+  }
+
+  acceptConstraints(): void {
+    const proj = this.project();
+    if (!proj) return;
+    
+    this.isLoading.set(true);
+    this.normalizeKpiWeights();
+    
+    this.http
+      .post<{ data: any }>(
+        `/api/triz/project/${proj.id}/update-constraints`,
+        { constraints: this.constraints().filter(c => c.trim() !== ''), kpis: this.kpis().filter(k => k.name.trim() !== '') }
+      )
+      .subscribe({
+        next: () => {
+          this.generateContradictionCall(proj.id);
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.announcement.set('Error saving constraints.');
+        },
+      });
+  }
+
+  modifyConstraintsWithAI(): void {
+    const proj = this.project();
+    const prompt = this.modifyPrompt();
+    if (!proj || !prompt.trim()) return;
+    
+    this.isLoading.set(true);
+    this.announcement.set('Modifying constraints and KPIs via AI...');
+    
+    this.http
+      .post<{ data: { constraints: string[]; kpis: KpiDto[] } }>(
+        `/api/triz/project/${proj.id}/modify-constraints`,
+        { prompt }
+      )
+      .subscribe({
+        next: (res) => {
+          this.constraints.set(res.data.constraints);
+          this.kpis.set(res.data.kpis);
+          this.modifyPrompt.set('');
+          this.isLoading.set(false);
+          this.announcement.set('Constraints and KPIs updated by AI.');
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.announcement.set('Error modifying constraints via AI.');
+        },
+      });
+  }
+
+  rejectConstraints(): void {
+    this.currentStep.set(1);
+    this.announcement.set('Returned to problem definition.');
   }
 
   // ─── Step 2: Generate / Regenerate Contradiction ────────────────
