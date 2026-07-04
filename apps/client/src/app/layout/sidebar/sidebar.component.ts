@@ -102,8 +102,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 export class SidebarComponent {
   isCollapsed = signal(false);
   navItems = [
+    { path: '/triz-solver', label: 'R&D Solver', icon: '🧠', id: 'triz-solver' },
     { path: '/dashboard', label: 'Dashboard', icon: '📊', id: 'dashboard' },
-    { path: '/triz-solver', label: 'TRIZ R&D Solver', icon: '🧠', id: 'triz-solver' },
     { path: '/settings', label: 'Settings', icon: '⚙️', id: 'settings' },
     { path: '/dev-options', label: 'Dev Options', icon: '🛠️', id: 'dev-options' },
   ];
