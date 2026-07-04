@@ -8,7 +8,8 @@ import {
   SampledTriplet, 
   TrizCandidate, 
   ScoreboardEntry, 
-  SelectionResult 
+  SelectionResult,
+  KpiDto
 } from '@libs/shared';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +19,19 @@ export class TrizApiService {
   createProject(title: string, description: string, targetSdgs: number[]): Observable<ApiResponse<TrizProject>> {
     return this.apiService.post<TrizProject>('/triz/project', { title, description, targetSdgs });
   }
+
+  analyzeConstraints(projectId: string): Observable<ApiResponse<{ constraints: string[]; kpis: KpiDto[] }>> {
+    return this.apiService.post<{ constraints: string[]; kpis: KpiDto[] }>(`/triz/project/${projectId}/analyze-constraints`, {});
+  }
+
+  updateConstraints(projectId: string, constraints: string[], kpis: KpiDto[]): Observable<ApiResponse<any>> {
+    return this.apiService.post<any>(`/triz/project/${projectId}/update-constraints`, { constraints, kpis });
+  }
+
+  modifyConstraints(projectId: string, prompt: string): Observable<ApiResponse<{ constraints: string[]; kpis: KpiDto[] }>> {
+    return this.apiService.post<{ constraints: string[]; kpis: KpiDto[] }>(`/triz/project/${projectId}/modify-constraints`, { prompt });
+  }
+
 
   generateContradiction(projectId: string): Observable<ApiResponse<ContradictionResult>> {
     return this.apiService.post<ContradictionResult>(`/triz/project/${projectId}/contradiction`, {});

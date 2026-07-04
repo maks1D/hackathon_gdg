@@ -596,11 +596,8 @@ export class TrizSolverComponent {
 
   analyzeConstraintsCall(projectId: string): void {
     this.announcement.set('Analyzing problem to extract Constraints and KPIs...');
-    this.http
-      .post<{ data: { constraints: string[]; kpis: KpiDto[] } }>(
-        `/api/triz/project/${projectId}/analyze-constraints`,
-        {},
-      )
+    this.trizApi
+      .analyzeConstraints(projectId)
       .subscribe({
         next: (res) => {
           this.constraints.set(res.data.constraints);
@@ -685,11 +682,8 @@ export class TrizSolverComponent {
     this.isLoading.set(true);
     this.normalizeKpiWeights();
     
-    this.http
-      .post<{ data: any }>(
-        `/api/triz/project/${proj.id}/update-constraints`,
-        { constraints: this.constraints().filter(c => c.trim() !== ''), kpis: this.kpis().filter(k => k.name.trim() !== '') }
-      )
+    this.trizApi
+      .updateConstraints(proj.id, this.constraints().filter(c => c.trim() !== ''), this.kpis().filter(k => k.name.trim() !== ''))
       .subscribe({
         next: () => {
           this.generateContradictionCall(proj.id);
@@ -709,11 +703,8 @@ export class TrizSolverComponent {
     this.isLoading.set(true);
     this.announcement.set('Modifying constraints and KPIs via AI...');
     
-    this.http
-      .post<{ data: { constraints: string[]; kpis: KpiDto[] } }>(
-        `/api/triz/project/${proj.id}/modify-constraints`,
-        { prompt }
-      )
+    this.trizApi
+      .modifyConstraints(proj.id, prompt)
       .subscribe({
         next: (res) => {
           this.constraints.set(res.data.constraints);
