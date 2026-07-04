@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, ChangeDetectionStrategy, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { LlmApiService } from '@libs/http';
 import { RouterLink } from '@angular/router';
 import { TiltDirective } from '../../shared/directives/tilt.directive';
 import { CountUpDirective } from '../../shared/directives/count-up.directive';
@@ -140,14 +140,14 @@ export class DashboardComponent implements OnInit {
 
   activeProvider = signal('OpenAI');
 
-  private readonly http = inject(HttpClient);
+  private readonly llmApi = inject(LlmApiService);
 
   ngOnInit(): void {
     this.loadMetrics();
   }
 
   private loadMetrics(): void {
-    this.http.get<{ data: Record<string, unknown> }>('/api/llm/metrics').subscribe({
+    this.llmApi.getMetrics().subscribe({
       next: (response) => {
         const m = response.data;
         this.metrics.set([

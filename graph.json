@@ -8,6 +8,9 @@
           "root": "apps/client",
           "targets": {
             "lint": {
+              "dependsOn": [
+                "^lint"
+              ],
               "inputs": [
                 "default",
                 "{workspaceRoot}/eslint.config.mjs"
@@ -76,6 +79,10 @@
               "parallelism": true
             },
             "serve": {
+              "dependsOn": [
+                "build",
+                "^build"
+              ],
               "executor": "@angular/build:dev-server",
               "defaultConfiguration": "development",
               "options": {
@@ -112,6 +119,9 @@
           "root": "libs/shared",
           "targets": {
             "lint": {
+              "dependsOn": [
+                "^lint"
+              ],
               "inputs": [
                 "default",
                 "{workspaceRoot}/eslint.config.mjs"
@@ -167,6 +177,9 @@
           "root": "libs/http",
           "targets": {
             "lint": {
+              "dependsOn": [
+                "^lint"
+              ],
               "inputs": [
                 "default",
                 "{workspaceRoot}/eslint.config.mjs"
@@ -209,7 +222,7 @@
           "sourceRoot": "libs/http/src",
           "projectType": "library",
           "tags": [
-            "scope:shared",
+            "scope:client",
             "type:lib"
           ],
           "implicitDependencies": []
@@ -222,6 +235,9 @@
           "root": "apps/api",
           "targets": {
             "lint": {
+              "dependsOn": [
+                "^lint"
+              ],
               "inputs": [
                 "default",
                 "{workspaceRoot}/eslint.config.mjs"
@@ -371,6 +387,10 @@
               "parallelism": true
             },
             "serve": {
+              "dependsOn": [
+                "build",
+                "^build"
+              ],
               "executor": "@nx/js:node",
               "options": {
                 "buildTarget": "api:build",
@@ -419,6 +439,9 @@
               "parallelism": true
             },
             "lint": {
+              "dependsOn": [
+                "^lint"
+              ],
               "inputs": [
                 "default",
                 "{workspaceRoot}/eslint.config.mjs"
@@ -436,6 +459,10 @@
               "parallelism": true
             },
             "test": {
+              "dependsOn": [
+                "^test",
+                "^build"
+              ],
               "inputs": [
                 "default",
                 "^production"
@@ -455,7 +482,7 @@
             "start": {
               "executor": "nx:run-script",
               "metadata": {
-                "scriptContent": "npx nx run-many --target=serve --projects=api,client --parallel --output-style=stream",
+                "scriptContent": "concurrently \"npx nx serve api\" \"npx nx serve client\"",
                 "runCommand": "npm run start"
               },
               "options": {
@@ -589,6 +616,12 @@
           "tags": [
             "npm:private"
           ],
+          "implicitDependencies": [
+            "api",
+            "client",
+            "http",
+            "shared"
+          ],
           "metadata": {
             "targetGroups": {
               "NPM Scripts": [
@@ -614,15 +647,31 @@
               "packageVersion": "0.0.1",
               "isInPackageManagerWorkspaces": true
             }
-          },
-          "implicitDependencies": []
+          }
         }
       }
     },
     "dependencies": {
-      "client": [],
+      "client": [
+        {
+          "source": "client",
+          "target": "http",
+          "type": "static"
+        },
+        {
+          "source": "client",
+          "target": "shared",
+          "type": "static"
+        }
+      ],
       "shared": [],
-      "http": [],
+      "http": [
+        {
+          "source": "http",
+          "target": "shared",
+          "type": "static"
+        }
+      ],
       "api": [
         {
           "source": "api",
@@ -630,7 +679,28 @@
           "type": "static"
         }
       ],
-      "@hackathon/source": []
+      "@hackathon/source": [
+        {
+          "source": "@hackathon/source",
+          "target": "api",
+          "type": "implicit"
+        },
+        {
+          "source": "@hackathon/source",
+          "target": "client",
+          "type": "implicit"
+        },
+        {
+          "source": "@hackathon/source",
+          "target": "http",
+          "type": "implicit"
+        },
+        {
+          "source": "@hackathon/source",
+          "target": "shared",
+          "type": "implicit"
+        }
+      ]
     }
   }
 }

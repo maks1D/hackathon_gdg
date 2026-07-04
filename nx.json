@@ -16,13 +16,21 @@
       "inputs": ["production", "^production"],
       "cache": true
     },
+    "serve": {
+      "dependsOn": ["build", "^build"]
+    },
     "lint": {
+      "dependsOn": ["^lint"],
       "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"],
       "cache": true
     },
     "test": {
+      "dependsOn": ["^test", "^build"],
       "inputs": ["default", "^production"],
       "cache": true
+    },
+    "e2e": {
+      "dependsOn": ["^build"]
     }
   },
   "defaultBase": "main",
